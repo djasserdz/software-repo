@@ -1,0 +1,120 @@
+services:
+  backend:
+    build: ./backend
+    container_name: solveit_backend
+    command:
+      - "hypercorn"
+      - "src.main:app"
+      - "--bind"
+      - "0.0.0.0:8000"
+      - "--access-logfile"
+      - "-"
+      - "--reload"
+
+    ports:
+      - "8000:8000"
+    environment:
+      PROJECT_NAME: ${PROJECT_NAME}
+      DOMAIN_NAME: ${DOMAIN_NAME}
+
+      REDIS_HOST: ${REDIS_HOST}
+      REDIS_PORT: ${REDIS_PORT}
+      REDIS_PASSWORD: ${REDIS_PASSWORD}
+
+      POSTGRES_HOST: ${POSTGRES_HOST}
+      POSTGRES_PORT: ${POSTGRES_PORT}
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+
+      SECRET_KEY: ${SECRET_KEY}
+      ALGORITHM: ${ALGORITHM}
+      ACCESS_TOKEN_EXPIRE_MINUTES: ${ACCESS_TOKEN_EXPIRE_MINUTES}
+
+    volumes:
+      - ./backend/src:/app/src
+    networks:
+      - solveit_net
+    restart: unless-stopped
+
+  # judge:
+  #   image: judge0/judge0:latest
+  #   container_name: solveit_server
+  #   ports:
+  #     - "2358:2358"
+  #   privileged: true
+  #   environment:
+    
+  #     REDIS_HOST: ${REDIS_HOST}
+  #     REDIS_PORT: ${REDIS_PORT}
+
+  #     POSTGRES_HOST: ${POSTGRES_HOST}
+  #     POSTGRES_PORT: ${POSTGRES_PORT}
+  #     POSTGRES_DB: ${POSTGRES_DB}
+  #     POSTGRES_USER: ${POSTGRES_USER}
+  #     POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+
+  #   volumes:
+  #     - judge0-data:/data
+  #     - ./judge0.conf:/judge0.conf:ro
+  #   depends_on:
+  #     - db
+  #     - cache
+  #   networks:
+  #     - solveit_net
+  #   restart: unless-stopped
+
+  # workers:
+  #   image: judge0/judge0:latest
+  #   container_name: solveit_workers
+  #   privileged: true
+  #   environment:
+  #     - REDIS_HOST=${REDIS_HOST}
+  #     - REDIS_PORT=${REDIS_PORT}
+  #     - POSTGRES_HOST=${POSTGRES_HOST}
+  #     - POSTGRES_PORT=${POSTGRES_PORT}
+  #     - POSTGRES_DB=${POSTGRES_DB}
+  #     - POSTGRES_USER=${POSTGRES_USER}
+  #     - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+  #   volumes:
+  #     - ./judge0.conf:/judge0.conf:ro
+  #   command: ["./scripts/workers"]
+  #   depends_on:
+  #     - db
+  #     - cache
+  #   networks:
+  #     - solveit_net
+  #   restart: unless-stopped
+
+  db:
+    image: postgres:16-alpine
+    container_name: solveit_db
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    networks:
+      - solveit_net
+    restart: unless-stopped
+
+  # cache:
+  #   image: redis:7-alpine
+  #   container_name: solveit_cache
+  #   volumes:
+  #     - cache-data:/data
+  #   networks:
+  #     - solveit_net
+  #   restart: unless-stopped
+
+networks:
+  solveit_net:
+    driver: bridge
+
+volumes:
+  # judge0-data:
+  postgres-data:
+  # cache-data:

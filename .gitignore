@@ -1,0 +1,55 @@
+# Byte-compiled / optimized / dynamic Python files
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.so
+
+# Virtual environment
+venv/
+.env/
+ENV/
+.venv/
+
+# Environment variables
+*.env
+*.env.*
+*.slvt
+
+# Cache
+*.cache
+.cache/
+pytest_cache/
+pip-cache/
+
+# Pytest
+.coverage
+htmlcov/
+
+# Mypy / Pylint
+.mypy_cache/
+.pytest_cache/
+.pylint.d/
+
+# FastAPI build / static files
+staticfiles/
+build/
+dist/
+
+# Logs
+logs/
+*.log
+
+# IDE folders
+.vscode/
+.idea/
+*.iml
+
+# Docker
+docker-compose.override.yml
+**/__pycache__/
+**/*.pyc
+
+judge0.conf
+
+.ruff*
