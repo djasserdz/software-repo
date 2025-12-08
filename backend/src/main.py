@@ -3,12 +3,35 @@ from fastapi import FastAPI
 from contextlib import asynccontextmanager
 from src.config.database import Database
 
-from src.routes.team import router as team_router
-from src.routes.auth import router as auth_router
-from src.routes.challenge import router as challenge_router
-from src.routes.shop import router as shop_router
-from src.routes.blackhole import router as black_hole_router
-from src.routes.submit import router as submit_router
+from src.routes.user import router as user_router
+
+import os
+import logging
+from logging.handlers import RotatingFileHandler
+
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+LOG_FILE = os.path.join(BASE_DIR, "app.log")
+
+file_handler = RotatingFileHandler(
+    LOG_FILE,
+    maxBytes=5 * 1024 * 1024,  # 5MB
+    backupCount=5
+)
+
+formatter = logging.Formatter(
+    "%(asctime)s - %(levelname)s - %(name)s - %(message)s"
+)
+
+file_handler.setFormatter(formatter)
+
+stream_handler = logging.StreamHandler()
+stream_handler.setFormatter(formatter)
+
+root_logger = logging.getLogger()
+root_logger.setLevel(logging.INFO)
+root_logger.addHandler(file_handler)
+root_logger.addHandler(stream_handler)
+
 
 
 @asynccontextmanager
@@ -38,10 +61,4 @@ app.add_middleware(
     ],
 )
 
-
-app.include_router(team_router, prefix="/teams", tags=["Teams"])
-app.include_router(auth_router, tags=["auth"])
-app.include_router(challenge_router, tags=["Challenge"])
-app.include_router(shop_router, tags=["shop"], prefix="/shop")
-app.include_router(black_hole_router, tags=["blackhole"], prefix="/blackhole")
-app.include_router(submit_router, prefix="/submit", tags=["submits"])
+app.include_router(user_router, prefix="/user", tags=["user"])

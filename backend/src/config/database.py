@@ -64,5 +64,7 @@ class ConManager:
         print(
             f"{BLUE}[INFO]{RESET} Creating a new SQLModel session for DB: {settings.POSTGRES_DB} ..."
         )
-        async with AsyncSession(engine) as session:
+        async with AsyncSession(
+            engine, expire_on_commit=False
+        ) as session:  # ← Add expire_on_commit=False
             yield session
