@@ -68,7 +68,7 @@ async def get_current_user(token: str = Depends(oauth2_scheme)) -> User:
         raise HTTPException(status_code=401, detail="Invalid token")
 
     async for session in ConManager.get_session():
-        user = await UserRepo.get_user(session, user_id)
+        user = await UserRepo.get_by_id(session, user_id)
         if not user:
             raise HTTPException(status_code=404, detail="User not found")
         return user

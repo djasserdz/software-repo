@@ -7,7 +7,7 @@ from fastapi import status
 import logging
 
 from src.database.db import User
-from src.models.user import UserCreate, UserRole, AccountStatus
+from src.models.user import UserCreate, UserRole
 from src.HTTPBaseException import HTTPBaseException
 
 logger = logging.getLogger(__name__)
@@ -16,6 +16,9 @@ class UserRepo:
     class UserNotFound(HTTPBaseException):
         code = status.HTTP_404_NOT_FOUND
         message = "User not found"
+    class Suspended(HTTPBaseException):
+        code = status.HTTP_401_UNAUTHORIZED
+        message = "Your Account Has been Suspended"
 
     class EmailExist(HTTPBaseException):
         code = status.HTTP_409_CONFLICT
@@ -68,7 +71,7 @@ class UserRepo:
     @staticmethod
     async def create(session: AsyncSession, user_data: dict, commit: bool) -> User:
         try:
-            user_data["account_status"] = AccountStatus.ACTIVE
+            user_data["account_status"] = True
 
             orm_user = User(**user_data)
             session.add(orm_user)
@@ -123,7 +126,8 @@ class UserRepo:
             return user
         except UserRepo.UserNotFound:
             raise
-        except Exception:
+        except Exception as e:
+            logger.exception(f"❌ Failed to get user Error : {e}")
             raise UserRepo.GetError()
 
     @staticmethod
@@ -132,9 +136,8 @@ class UserRepo:
         skip: int = 0,
         limit: int = 100,
         role: Optional[UserRole] = None,
-        account_status: Optional[AccountStatus] = None,
+        account_status: bool = None,
     ) -> List[User]:
-        """Get all users with optional filters"""
         try:
             stmt = select(User).where(User.deleted_at.is_(None))
 
@@ -148,7 +151,8 @@ class UserRepo:
 
             result = await session.execute(stmt)
             return list(result.scalars().all())
-        except Exception:
+        except Exception as e:
+            logger.exception(f"❌ Failed to get users Error : {e}")
             raise UserRepo.GetAllError()
 
     @staticmethod
@@ -180,8 +184,9 @@ class UserRepo:
             raise UserRepo.EmailExist()
         except UserRepo.UserNotFound:
             raise
-        except Exception:
+        except Exception as e:
             await session.rollback()
+            logger.exception(f"❌ Failed to update user Error : {e}")
             raise UserRepo.UpdateError()
 
     @staticmethod
@@ -200,8 +205,9 @@ class UserRepo:
                 await session.flush()
 
             return result.rowcount > 0
-        except Exception:
+        except Exception as e:
             await session.rollback()
+            logger.exception(f"❌ Failed to delete user Error : {e}")
             raise UserRepo.SoftDeleteError()
 
     @staticmethod
@@ -224,39 +230,40 @@ class UserRepo:
     async def suspend(
         session: AsyncSession, user_id: int, reason: str
     ) -> Optional[User]:
-        """Suspend a user account"""
         try:
             return await UserRepo.update(
                 session,
                 user_id,
-                account_status=AccountStatus.NOT_ACTIVE,
+                commit=True,
+                account_status=False,
                 suspended_at=datetime.utcnow(),
                 suspended_reason=reason,
             )
         except UserRepo.UserNotFound:
             raise
-        except Exception:
+        except Exception as e:
+            logger.exception(f"❌ Failed to suspend user Error : {e}")
             raise UserRepo.SuspendError()
 
     @staticmethod
     async def unsuspend(session: AsyncSession, user_id: int) -> Optional[User]:
-        """Unsuspend a user account"""
         try:
             return await UserRepo.update(
                 session,
                 user_id,
-                account_status=AccountStatus.ACTIVE,
+                commit=True,
+                account_status=True,
                 suspended_at=None,
                 suspended_reason=None,
             )
         except UserRepo.UserNotFound:
             raise
-        except Exception:
+        except Exception as e:
+            logger.exception(f"❌ Failed to unsuspend user Error : {e}")
             raise UserRepo.UnsuspendError()
 
     @staticmethod
     async def verify_email(session: AsyncSession, user_id: int) -> Optional[User]:
-        """Verify user email"""
         try:
             return await UserRepo.update(
                 session, user_id, email_verified_at=datetime.utcnow()
@@ -270,7 +277,7 @@ class UserRepo:
     async def count(
         session: AsyncSession,
         role: Optional[UserRole] = None,
-        account_status: Optional[AccountStatus] = None,
+        account_status: bool = None,
     ) -> int:
         try:
             stmt = select(func.count(User.user_id)).where(User.deleted_at.is_(None))

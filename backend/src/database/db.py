@@ -5,7 +5,6 @@ from enum import Enum
 from sqlmodel import Field, SQLModel, Relationship, Index
 
 
-# Enums
 class UserRole(str, Enum):
     FARMER = "farmer"
     WAREHOUSE_ADMIN = "warehouse_admin"
@@ -46,7 +45,7 @@ class User(SQLModel, table=True):
     address: str = Field(nullable=False)
     role: UserRole = Field(nullable=False)
     email_verified_at: Optional[datetime] = None
-    account_status: AccountStatus = Field(nullable=False)
+    account_status: bool = Field(nullable=False)
     suspended_at: Optional[datetime] = None
     suspended_reason: Optional[str] = None
     created_at: datetime = Field(default_factory=datetime.utcnow)

@@ -22,7 +22,8 @@ class UserService:
     @staticmethod
     async def login_user(user_data: UserLogin, session: AsyncSession):
      user = await UserRepo.get_by_email(session, user_data.email)
- 
+     if user.account_status == False:
+        raise UserRepo.Suspended()  
      input_with_salt = user_data.password + user.salt
  
      if verify_password(input_with_salt, user.password):
@@ -48,7 +49,7 @@ class UserService:
 
     @staticmethod
     async def delete_user(session: AsyncSession, user_id: int):
-        deleted = await UserRepo.soft_delete(session, user_id)
+        deleted = await UserRepo.soft_delete(session, user_id,commit=True)
         if not deleted:
             raise UserRepo.UserNotFound()
         return True

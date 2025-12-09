@@ -13,9 +13,6 @@ class UserRole(str, Enum):
     ADMIN = "admin"
 
 
-class AccountStatus(str, Enum):
-    ACTIVE = "active"
-    NOT_ACTIVE = "not_active"
 
 
 # --------------------------
@@ -69,14 +66,17 @@ class UserUpdate(BaseModel):
 # --------------------------
 class UserResponse(UserBase):
     user_id: int
-    account_status: AccountStatus
-    suspension_reason: Optional[str] = None
+    account_status: bool
+    suspended_reason: Optional[str] = None
     suspended_at: Optional[datetime] = None
     created_at: datetime
     updated_at: datetime
 
     model_config = ConfigDict(from_attributes=True)
 
+class LoginResponse(BaseModel):
+    user : UserResponse
+    token : str
 
 # --------------------------
 # User login
@@ -106,7 +106,7 @@ class UserReactivate(BaseModel):
 # Admin update
 # --------------------------
 class UserAdminUpdate(BaseModel):
-    account_status: Optional[AccountStatus] = None
+    account_status: bool
     suspension_reason: Optional[str] = Field(None, min_length=5, max_length=500)
     suspended_at: Optional[datetime] = None
 
