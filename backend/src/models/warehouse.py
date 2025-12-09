@@ -7,8 +7,8 @@ from ..database.db import ZoneStatus
 class WarehouseBase(BaseModel):
     name: str = Field(..., min_length=1, max_length=200)
     location: str = Field(..., min_length=1, max_length=500)
-    x_float: float = Field(..., ge=-180.0, le=180.0)
-    y_float: float = Field(..., ge=-90.0, le=90.0)
+    x_float: Optional[float] = Field(..., ge=-180.0, le=180.0)
+    y_float: Optional[float] = Field(..., ge=-90.0, le=90.0)
     status: ZoneStatus
 
 

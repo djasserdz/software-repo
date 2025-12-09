@@ -8,10 +8,10 @@ from fastapi import status
 from src.database.db import Warehouse, ZoneStatus
 from src.models.warehouse import WarehouseCreate
 from src.HTTPBaseException import HTTPBaseException
+import logging
 
 
 class WarehouseRepo:
-    """Repository class for Warehouse operations with static methods and proper error handling"""
 
     class WarehouseNotFound(HTTPBaseException):
         code = status.HTTP_404_NOT_FOUND
@@ -57,7 +57,6 @@ class WarehouseRepo:
     async def create(
         session: AsyncSession, warehouse_data: WarehouseCreate
     ) -> Warehouse:
-        """Create a new warehouse"""
         try:
             warehouse_dict = warehouse_data.model_dump()
             orm_warehouse = Warehouse(**warehouse_dict)
@@ -68,15 +67,15 @@ class WarehouseRepo:
         except IntegrityError:
             await session.rollback()
             raise WarehouseRepo.CreateError()
-        except Exception:
+        except Exception as e:
             await session.rollback()
+            logging.exception(f"Error creating the warehouse : {e}")
             raise WarehouseRepo.CreateError()
 
     @staticmethod
     async def get_by_id(
         session: AsyncSession, warehouse_id: int
     ) -> Optional[Warehouse]:
-        """Get warehouse by ID"""
         try:
             stmt = select(Warehouse).where(
                 Warehouse.warehouse_id == warehouse_id, Warehouse.deleted_at.is_(None)
@@ -88,7 +87,8 @@ class WarehouseRepo:
             return warehouse
         except WarehouseRepo.WarehouseNotFound:
             raise
-        except Exception:
+        except Exception as e:
+            logging.exception(f"Error getting the warehouse : {e}")
             raise WarehouseRepo.GetError()
 
     @staticmethod
@@ -99,7 +99,6 @@ class WarehouseRepo:
         manager_id: Optional[int] = None,
         status: Optional[ZoneStatus] = None,
     ) -> List[Warehouse]:
-        """Get all warehouses with optional filters"""
         try:
             stmt = select(Warehouse).where(Warehouse.deleted_at.is_(None))
 
@@ -113,14 +112,14 @@ class WarehouseRepo:
 
             result = await session.execute(stmt)
             return list(result.scalars().all())
-        except Exception:
+        except Exception as e:
+            logging.exception(f"Error get all warehouse : {e}")
             raise WarehouseRepo.GetAllError()
 
     @staticmethod
     async def update(
         session: AsyncSession, warehouse_id: int, **kwargs
     ) -> Optional[Warehouse]:
-        """Update warehouse by ID"""
         try:
             kwargs["updated_at"] = datetime.utcnow()
 
@@ -143,13 +142,13 @@ class WarehouseRepo:
             return updated
         except WarehouseRepo.WarehouseNotFound:
             raise
-        except Exception:
+        except Exception as e:
             await session.rollback()
+            logging.exception(f"Error update the warehouse : {e}")
             raise WarehouseRepo.UpdateError()
 
     @staticmethod
     async def soft_delete(session: AsyncSession, warehouse_id: int) -> bool:
-        """Soft delete warehouse by setting deleted_at timestamp"""
         try:
             stmt = (
                 update(Warehouse)
@@ -164,13 +163,13 @@ class WarehouseRepo:
             await session.commit()
 
             return result.rowcount > 0
-        except Exception:
+        except Exception as e:
             await session.rollback()
+            logging.exception(f"Error deleting the warehouse : {e}")
             raise WarehouseRepo.SoftDeleteError()
 
     @staticmethod
     async def hard_delete(session: AsyncSession, warehouse_id: int) -> bool:
-        """Hard delete warehouse from database"""
         try:
             stmt = delete(Warehouse).where(Warehouse.warehouse_id == warehouse_id)
 
@@ -188,7 +187,6 @@ class WarehouseRepo:
         manager_id: Optional[int] = None,
         status: Optional[ZoneStatus] = None,
     ) -> int:
-        """Count warehouses with optional filters"""
         try:
             stmt = select(func.count(Warehouse.warehouse_id)).where(
                 Warehouse.deleted_at.is_(None)
@@ -207,7 +205,6 @@ class WarehouseRepo:
 
     @staticmethod
     async def exists(session: AsyncSession, warehouse_id: int) -> bool:
-        """Check if warehouse exists"""
         try:
             stmt = select(Warehouse.warehouse_id).where(
                 Warehouse.warehouse_id == warehouse_id, Warehouse.deleted_at.is_(None)
