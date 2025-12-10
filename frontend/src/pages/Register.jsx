@@ -5,14 +5,13 @@ import ErrorMessage from '../components/ErrorMessage';
 
 const Register = () => {
   const [formData, setFormData] = useState({
+    name: '',
     email: '',
     password: '',
     confirmPassword: '',
-    firstName: '',
-    lastName: '',
+    role: 'farmer', // default role
     phone: '',
-    address: '',
-    farmSize: ''
+    address: ''
   });
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
@@ -32,8 +31,13 @@ const Register = () => {
       return;
     }
 
-    if (formData.password.length < 6) {
-      setError('Password must be at least 6 characters');
+    if (formData.password.length < 8) {
+      setError('Password must be at least 8 characters');
+      return;
+    }
+
+    if (formData.name.length < 2) {
+      setError('Name must be at least 2 characters');
       return;
     }
 
@@ -66,32 +70,20 @@ const Register = () => {
             <ErrorMessage message={error} />
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div>
-                <label htmlFor="firstName" className="label">
-                  First Name
+              <div className="md:col-span-2">
+                <label htmlFor="name" className="label">
+                  Full Name
                 </label>
                 <input
-                  id="firstName"
-                  name="firstName"
+                  id="name"
+                  name="name"
                   type="text"
                   required
+                  minLength={2}
+                  maxLength={100}
                   className="input"
-                  value={formData.firstName}
-                  onChange={handleChange}
-                />
-              </div>
-
-              <div>
-                <label htmlFor="lastName" className="label">
-                  Last Name
-                </label>
-                <input
-                  id="lastName"
-                  name="lastName"
-                  type="text"
-                  required
-                  className="input"
-                  value={formData.lastName}
+                  placeholder="John Doe"
+                  value={formData.name}
                   onChange={handleChange}
                 />
               </div>
@@ -106,6 +98,7 @@ const Register = () => {
                   type="email"
                   required
                   className="input"
+                  placeholder="john@example.com"
                   value={formData.email}
                   onChange={handleChange}
                 />
@@ -113,14 +106,14 @@ const Register = () => {
 
               <div>
                 <label htmlFor="phone" className="label">
-                  Phone Number
+                  Phone Number <span className="text-gray-400 text-sm">(Optional)</span>
                 </label>
                 <input
                   id="phone"
                   name="phone"
                   type="tel"
-                  required
                   className="input"
+                  placeholder="1234567890"
                   value={formData.phone}
                   onChange={handleChange}
                 />
@@ -135,7 +128,10 @@ const Register = () => {
                   name="password"
                   type="password"
                   required
+                  minLength={8}
+                  maxLength={100}
                   className="input"
+                  placeholder="Min. 8 characters"
                   value={formData.password}
                   onChange={handleChange}
                 />
@@ -151,6 +147,7 @@ const Register = () => {
                   type="password"
                   required
                   className="input"
+                  placeholder="Re-enter password"
                   value={formData.confirmPassword}
                   onChange={handleChange}
                 />
@@ -158,29 +155,15 @@ const Register = () => {
 
               <div className="md:col-span-2">
                 <label htmlFor="address" className="label">
-                  Address
+                  Address <span className="text-gray-400 text-sm">(Optional)</span>
                 </label>
                 <textarea
                   id="address"
                   name="address"
                   rows="2"
                   className="input"
+                  placeholder="123 Main Street"
                   value={formData.address}
-                  onChange={handleChange}
-                />
-              </div>
-
-              <div>
-                <label htmlFor="farmSize" className="label">
-                  Farm Size (hectares)
-                </label>
-                <input
-                  id="farmSize"
-                  name="farmSize"
-                  type="number"
-                  step="0.01"
-                  className="input"
-                  value={formData.farmSize}
                   onChange={handleChange}
                 />
               </div>
