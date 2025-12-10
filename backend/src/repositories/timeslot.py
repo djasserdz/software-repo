@@ -11,8 +11,6 @@ from src.HTTPBaseException import HTTPBaseException
 
 
 class TimeSlotRepo:
-    """Repository class for TimeSlot operations with static methods and proper error handling"""
-
     class TimeSlotNotFound(HTTPBaseException):
         code = status.HTTP_404_NOT_FOUND
         message = "Time slot not found"
@@ -55,11 +53,9 @@ class TimeSlotRepo:
 
     @staticmethod
     async def create(session: AsyncSession, timeslot_data: TimeSlotCreate) -> TimeSlot:
-        """Create a new time slot"""
         try:
             timeslot_dict = timeslot_data.model_dump()
 
-            # Validate time range
             if timeslot_dict.get("end_at") <= timeslot_dict.get("start_at"):
                 raise TimeSlotRepo.InvalidTimeRange()
 
@@ -80,7 +76,6 @@ class TimeSlotRepo:
 
     @staticmethod
     async def get_by_id(session: AsyncSession, time_id: int) -> Optional[TimeSlot]:
-        """Get time slot by ID"""
         try:
             stmt = select(TimeSlot).where(
                 TimeSlot.time_id == time_id, TimeSlot.deleted_at.is_(None)
@@ -103,7 +98,6 @@ class TimeSlotRepo:
         zone_id: Optional[int] = None,
         status: Optional[TimeSlotStatus] = None,
     ) -> List[TimeSlot]:
-        """Get all time slots with optional filters"""
         try:
             stmt = select(TimeSlot).where(TimeSlot.deleted_at.is_(None))
 
@@ -124,9 +118,7 @@ class TimeSlotRepo:
     async def update(
         session: AsyncSession, time_id: int, **kwargs
     ) -> Optional[TimeSlot]:
-        """Update time slot by ID"""
         try:
-            # Validate time range if both times are being updated
             if "start_at" in kwargs and "end_at" in kwargs:
                 if kwargs["end_at"] <= kwargs["start_at"]:
                     raise TimeSlotRepo.InvalidTimeRange()
@@ -158,7 +150,6 @@ class TimeSlotRepo:
 
     @staticmethod
     async def soft_delete(session: AsyncSession, time_id: int) -> bool:
-        """Soft delete time slot by setting deleted_at timestamp"""
         try:
             stmt = (
                 update(TimeSlot)
@@ -176,7 +167,6 @@ class TimeSlotRepo:
 
     @staticmethod
     async def hard_delete(session: AsyncSession, time_id: int) -> bool:
-        """Hard delete time slot from database"""
         try:
             stmt = delete(TimeSlot).where(TimeSlot.time_id == time_id)
 
@@ -194,7 +184,6 @@ class TimeSlotRepo:
         zone_id: Optional[int] = None,
         status: Optional[TimeSlotStatus] = None,
     ) -> int:
-        """Count time slots with optional filters"""
         try:
             stmt = select(func.count(TimeSlot.time_id)).where(
                 TimeSlot.deleted_at.is_(None)
@@ -213,7 +202,6 @@ class TimeSlotRepo:
 
     @staticmethod
     async def exists(session: AsyncSession, time_id: int) -> bool:
-        """Check if time slot exists"""
         try:
             stmt = select(TimeSlot.time_id).where(
                 TimeSlot.time_id == time_id, TimeSlot.deleted_at.is_(None)

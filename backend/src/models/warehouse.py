@@ -39,7 +39,14 @@ class WarehouseUpdate(BaseModel):
 
     model_config = ConfigDict(
         json_schema_extra={
-            "example": {"name": "Updated Warehouse Name", "status": "not_active"}
+            "example": {
+                "name": "Updated Warehouse Name",
+                "status": "not_active",
+                "location": "example",
+                "x_float": "84.55",
+                "y_float": "-1.25",
+                "manager_id": "1",
+            }
         }
     )
 

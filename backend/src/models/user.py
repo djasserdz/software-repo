@@ -13,8 +13,6 @@ class UserRole(str, Enum):
     ADMIN = "admin"
 
 
-
-
 # --------------------------
 # Base user model
 # --------------------------
@@ -22,8 +20,8 @@ class UserBase(BaseModel):
     name: str = Field(..., min_length=2, max_length=100)
     email: EmailStr
     role: UserRole
-    phone: Optional[str] = None          # now optional
-    address: Optional[str] = None        # now optional
+    phone: Optional[str] = None  # now optional
+    address: Optional[str] = None  # now optional
 
 
 # --------------------------
@@ -74,9 +72,11 @@ class UserResponse(UserBase):
 
     model_config = ConfigDict(from_attributes=True)
 
+
 class LoginResponse(BaseModel):
-    user : UserResponse
-    token : str
+    user: UserResponse
+    token: str
+
 
 # --------------------------
 # User login

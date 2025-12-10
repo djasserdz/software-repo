@@ -1,7 +1,7 @@
 from pydantic import BaseModel, Field, ConfigDict, model_validator
 from typing import Optional
 from datetime import datetime
-from ..database.db import ZoneStatus
+from src.database.db import ZoneStatus
 
 
 class StorageZoneBase(BaseModel):
@@ -19,12 +19,9 @@ class StorageZoneBase(BaseModel):
 
 
 class StorageZoneCreate(StorageZoneBase):
-    warehouse_id: int = Field(..., gt=0)
-
     model_config = ConfigDict(
         json_schema_extra={
             "example": {
-                "warehouse_id": 1,
                 "name": "Zone A - Wheat Storage",
                 "grain_type_id": 1,
                 "total_capacity": 10000,

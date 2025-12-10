@@ -1,5 +1,5 @@
 from typing import Optional
-from datetime import datetime
+from datetime import datetime,time
 from decimal import Decimal
 from enum import Enum
 from sqlmodel import Field, SQLModel, Relationship, Index
@@ -100,9 +100,9 @@ class StorageZone(SQLModel, table=True):
     deleted_at: Optional[datetime] = None
 
     warehouse: Optional[Warehouse] = Relationship(back_populates="storage_zones")
-    grains: list["Grain"] = Relationship(back_populates="zone")
     appointments: list["Appointment"] = Relationship(back_populates="zone")
     time_slots: list["TimeSlot"] = Relationship(back_populates="zone")
+    time_slot_templates: list["TimeSlotTemplate"] = Relationship(back_populates="zone")
 
     __table_args__ = (
         Index("idx_storagezone_warehouse_id", "warehouse_id"),
@@ -115,28 +115,27 @@ class Grain(SQLModel, table=True):
     __tablename__ = "grains"
 
     grain_id: Optional[int] = Field(default=None, primary_key=True)
-    zone_id: int = Field(foreign_key="storagezones.zone_id", nullable=False)
-    appointment_id: int = Field(
-        foreign_key="appointments.appointment_id", nullable=False
-    )
-    delivery_id: int = Field(foreign_key="deliveries.delivery_id", nullable=False)
     name: str = Field(nullable=False)
     price: Decimal = Field(nullable=False, decimal_places=2)
     created_at: datetime = Field(default_factory=datetime.utcnow)
     deleted_at: Optional[datetime] = None
     updated_at: datetime = Field(default_factory=datetime.utcnow)
 
-    zone: Optional[StorageZone] = Relationship(back_populates="grains")
-    appointment: Optional["Appointment"] = Relationship(back_populates="grains")
-    delivery: Optional["Delivery"] = Relationship(back_populates="grains")
+    __table_args__ = (Index("idx_grain_created_at", "created_at"),)
 
-    __table_args__ = (
-        Index("idx_grain_zone_id", "zone_id"),
-        Index("idx_grain_appointment_id", "appointment_id"),
-        Index("idx_grain_delivery_id", "delivery_id"),
-        Index("idx_grain_created_at", "created_at"),
-    )
+class TimeSlotTemplate(SQLModel, table=True):
+    __tablename__ = "timeslot_templates"
 
+    template_id: Optional[int] = Field(default=None, primary_key=True)
+    zone_id: int = Field(foreign_key="storagezones.zone_id", nullable=False)
+    day_of_week: int = Field(nullable=False)  # 0=Monday, 6=Sunday
+    start_time: time = Field(nullable=False)
+    end_time: time = Field(nullable=False)
+    max_appointments: int = Field(default=1)  # 1 per timeslot
+    created_at: datetime = Field(default_factory=datetime.utcnow)
+    updated_at: datetime = Field(default_factory=datetime.utcnow)
+
+    zone: Optional["StorageZone"] = Relationship(back_populates="time_slot_templates")
 
 class TimeSlot(SQLModel, table=True):
     __tablename__ = "timeslots"
@@ -167,7 +166,7 @@ class Appointment(SQLModel, table=True):
     appointment_id: Optional[int] = Field(default=None, primary_key=True)
     farmer_id: int = Field(foreign_key="users.user_id", nullable=False)
     zone_id: int = Field(foreign_key="storagezones.zone_id", nullable=False)
-    grain_type_id: int = Field(nullable=False)
+    grain_type_id: int = Field(foreign_key="grains.grain_id", nullable=False)
     timeslot_id: int = Field(foreign_key="timeslots.time_id", nullable=False)
     requested_quantity: int = Field(nullable=False)
     status: AppointmentStatus = Field(nullable=False)
@@ -177,9 +176,9 @@ class Appointment(SQLModel, table=True):
 
     farmer: Optional[User] = Relationship(back_populates="appointments")
     zone: Optional[StorageZone] = Relationship(back_populates="appointments")
+    grain_type: Optional[Grain] = Relationship()
     time_slot: Optional[TimeSlot] = Relationship(back_populates="appointments")
     delivery: Optional["Delivery"] = Relationship(back_populates="appointment")
-    grains: list[Grain] = Relationship(back_populates="appointment")
 
     __table_args__ = (
         Index("idx_appointment_farmer_id", "farmer_id"),
@@ -198,13 +197,12 @@ class Delivery(SQLModel, table=True):
         foreign_key="appointments.appointment_id", nullable=False
     )
     receipt_code: str = Field(nullable=False)
-    total_price: str = Field(nullable=False)
+    total_price: Decimal = Field(nullable=False, decimal_places=2)
     deleted_at: Optional[datetime] = None
     updated_at: datetime = Field(default_factory=datetime.utcnow)
     created_at: datetime = Field(default_factory=datetime.utcnow)
 
     appointment: Optional[Appointment] = Relationship(back_populates="delivery")
-    grains: list[Grain] = Relationship(back_populates="delivery")
 
     __table_args__ = (
         Index("idx_delivery_appointment_id", "appointment_id"),

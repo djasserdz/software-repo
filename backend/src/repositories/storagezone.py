@@ -11,8 +11,6 @@ from src.HTTPBaseException import HTTPBaseException
 
 
 class StorageZoneRepo:
-    """Repository class for StorageZone operations with static methods and proper error handling"""
-
     class StorageZoneNotFound(HTTPBaseException):
         code = status.HTTP_404_NOT_FOUND
         message = "Storage zone not found"
@@ -61,11 +59,9 @@ class StorageZoneRepo:
     async def create(
         session: AsyncSession, zone_data: StorageZoneCreate
     ) -> StorageZone:
-        """Create a new storage zone"""
         try:
             zone_dict = zone_data.model_dump()
 
-            # Validate capacity
             if zone_dict.get("available_capacity", 0) > zone_dict.get(
                 "total_capacity", 0
             ):
@@ -87,8 +83,7 @@ class StorageZoneRepo:
             raise StorageZoneRepo.CreateError()
 
     @staticmethod
-    async def get_by_id(session: AsyncSession, zone_id: int) -> Optional[StorageZone]:
-        """Get storage zone by ID"""
+    async def get_by_id(session: AsyncSession, zone_id: int):
         try:
             stmt = select(StorageZone).where(
                 StorageZone.zone_id == zone_id, StorageZone.deleted_at.is_(None)
@@ -112,17 +107,16 @@ class StorageZoneRepo:
         grain_type_id: Optional[int] = None,
         status: Optional[ZoneStatus] = None,
     ) -> List[StorageZone]:
-        """Get all storage zones with optional filters"""
         try:
             stmt = select(StorageZone).where(StorageZone.deleted_at.is_(None))
 
-            if warehouse_id:
+            if warehouse_id is not None:
                 stmt = stmt.where(StorageZone.warehouse_id == warehouse_id)
 
-            if grain_type_id:
+            if grain_type_id is not None:
                 stmt = stmt.where(StorageZone.grain_type_id == grain_type_id)
 
-            if status:
+            if status is not None:
                 stmt = stmt.where(StorageZone.status == status)
 
             stmt = (
@@ -138,9 +132,7 @@ class StorageZoneRepo:
     async def update(
         session: AsyncSession, zone_id: int, **kwargs
     ) -> Optional[StorageZone]:
-        """Update storage zone by ID"""
         try:
-            # Validate capacity if both are being updated
             if "available_capacity" in kwargs and "total_capacity" in kwargs:
                 if kwargs["available_capacity"] > kwargs["total_capacity"]:
                     raise StorageZoneRepo.CapacityError()
@@ -172,7 +164,6 @@ class StorageZoneRepo:
 
     @staticmethod
     async def soft_delete(session: AsyncSession, zone_id: int) -> bool:
-        """Soft delete storage zone by setting deleted_at timestamp"""
         try:
             stmt = (
                 update(StorageZone)
@@ -190,7 +181,6 @@ class StorageZoneRepo:
 
     @staticmethod
     async def hard_delete(session: AsyncSession, zone_id: int) -> bool:
-        """Hard delete storage zone from database"""
         try:
             stmt = delete(StorageZone).where(StorageZone.zone_id == zone_id)
 
@@ -209,7 +199,6 @@ class StorageZoneRepo:
         grain_type_id: Optional[int] = None,
         status: Optional[ZoneStatus] = None,
     ) -> int:
-        """Count storage zones with optional filters"""
         try:
             stmt = select(func.count(StorageZone.zone_id)).where(
                 StorageZone.deleted_at.is_(None)
@@ -231,7 +220,6 @@ class StorageZoneRepo:
 
     @staticmethod
     async def exists(session: AsyncSession, zone_id: int) -> bool:
-        """Check if storage zone exists"""
         try:
             stmt = select(StorageZone.zone_id).where(
                 StorageZone.zone_id == zone_id, StorageZone.deleted_at.is_(None)

@@ -12,10 +12,12 @@ from src.HTTPBaseException import HTTPBaseException
 
 logger = logging.getLogger(__name__)
 
+
 class UserRepo:
     class UserNotFound(HTTPBaseException):
         code = status.HTTP_404_NOT_FOUND
         message = "User not found"
+
     class Suspended(HTTPBaseException):
         code = status.HTTP_401_UNAUTHORIZED
         message = "Your Account Has been Suspended"
@@ -82,24 +84,22 @@ class UserRepo:
             await session.refresh(orm_user)
             return orm_user
         except IntegrityError as e:
-         await session.rollback()
-     
-         error_msg = str(e).lower()
-     
-         if "email" in error_msg:
-             raise UserRepo.EmailExist()
-     
-         logger.exception(f"❌ Integrity error : {error_msg}")
-         raise UserRepo.CreateError()
+            await session.rollback()
+
+            error_msg = str(e).lower()
+
+            if "email" in error_msg:
+                raise UserRepo.EmailExist()
+
+            logger.exception(f"❌ Integrity error : {error_msg}")
+            raise UserRepo.CreateError()
         except Exception as e:
             await session.rollback()
             logger.exception(f"❌ Failed to create user Error : {e}")
             raise UserRepo.CreateError()
 
     @staticmethod
-    async def get_by_id(
-        session: AsyncSession, user_id: int
-    ) -> Optional[User]:
+    async def get_by_id(session: AsyncSession, user_id: int) -> Optional[User]:
         try:
             stmt = select(User).where(
                 User.user_id == user_id, User.deleted_at.is_(None)

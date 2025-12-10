@@ -1,7 +1,7 @@
 from pydantic import BaseModel, Field, ConfigDict, field_validator
 from typing import Optional
 from datetime import datetime
-from ..database.db import TimeSlotStatus
+from src.database.db import TimeSlotStatus
 
 
 class TimeSlotBase(BaseModel):

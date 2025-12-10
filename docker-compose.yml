@@ -1,7 +1,9 @@
 services:
+
   backend:
     build: ./backend
     container_name: mahsoul_backend
+
     command:
       - "hypercorn"
       - "src.main:app"
@@ -10,9 +12,9 @@ services:
       - "--access-logfile"
       - "-"
       - "--reload"
-
     ports:
       - "8000:8000"
+
     environment:
       PROJECT_NAME: ${PROJECT_NAME}
       DOMAIN_NAME: ${DOMAIN_NAME}
@@ -21,8 +23,8 @@ services:
       REDIS_PORT: ${REDIS_PORT}
       REDIS_PASSWORD: ${REDIS_PASSWORD}
 
-      POSTGRES_HOST: ${POSTGRES_HOST}
-      POSTGRES_PORT: ${POSTGRES_PORT}
+      POSTGRES_HOST: db        
+      POSTGRES_PORT: 5432
       POSTGRES_DB: ${POSTGRES_DB}
       POSTGRES_USER: ${POSTGRES_USER}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
@@ -32,27 +34,88 @@ services:
       ACCESS_TOKEN_EXPIRE_MINUTES: ${ACCESS_TOKEN_EXPIRE_MINUTES}
 
     volumes:
-      - ./backend/src:/app/src
+      - ./backend/src:/app/src  
+
+    depends_on:
+      - db
+
     networks:
-      - mahsoul_net
+      - private_net   
+
     restart: unless-stopped
+
+
   db:
     image: postgres:16-alpine
     container_name: mahsoul_db
+
     environment:
       POSTGRES_DB: ${POSTGRES_DB}
       POSTGRES_USER: ${POSTGRES_USER}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
-    ports:
-      - "5432:5432"
+
     volumes:
       - software_app:/var/lib/postgresql/data
+
     networks:
-      - mahsoul_net
+      - private_net   
+
     restart: unless-stopped
+
+
+  frontend:
+    image: node:20-alpine
+    container_name: mahsoul_frontend
+
+    working_dir: /app
+    command: sh -c "npm install && npm run dev -- --host"
+
+    volumes:
+      - ./frontend:/app   
+    ports:
+      - "5173:5173"       
+
+    networks:
+      - public_net        
+
+    restart: unless-stopped
+
+
+  reverse_proxy:
+    image: nginx:alpine
+    container_name: mahsoul_reverse_proxy
+
+    ports:
+      - "80:80"        
+
+    environment:
+      BACKEND: backend
+      BACKEND_PORT: 8000
+      FRONTEND: frontend
+      FRONTEND_PORT: 5173
+
+    volumes:
+      - ./reverse_proxy/nginx.conf:/etc/nginx/templates/default.conf.template
+
+    depends_on:
+      - backend
+      - frontend
+
+    networks:
+      - public_net
+      - private_net
+
+    restart: unless-stopped
+
+
 networks:
-  mahsoul_net:
+  public_net:
     driver: bridge
+
+  private_net:
+    driver: bridge
+    internal: true   
+
 
 volumes:
   software_app:

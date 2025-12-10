@@ -16,23 +16,22 @@ class UserService:
         user_dict["password"] = hashed_password
         user_dict["salt"] = salt
 
-        user = await UserRepo.create(session, user_dict,commit=True)
+        user = await UserRepo.create(session, user_dict, commit=True)
         return user
 
     @staticmethod
     async def login_user(user_data: UserLogin, session: AsyncSession):
-     user = await UserRepo.get_by_email(session, user_data.email)
-     if user.account_status == False:
-        raise UserRepo.Suspended()  
-     input_with_salt = user_data.password + user.salt
- 
-     if verify_password(input_with_salt, user.password):
-         return user
- 
-     raise HTTPException(
-         status_code=status.HTTP_401_UNAUTHORIZED,
-         detail="Invalid credentials"
-     )
+        user = await UserRepo.get_by_email(session, user_data.email)
+        if user.account_status == False:
+            raise UserRepo.Suspended()
+        input_with_salt = user_data.password + user.salt
+
+        if verify_password(input_with_salt, user.password):
+            return user
+
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid credentials"
+        )
 
     @staticmethod
     async def search_user(user_id: int, session: AsyncSession):
@@ -49,7 +48,7 @@ class UserService:
 
     @staticmethod
     async def delete_user(session: AsyncSession, user_id: int):
-        deleted = await UserRepo.soft_delete(session, user_id,commit=True)
+        deleted = await UserRepo.soft_delete(session, user_id, commit=True)
         if not deleted:
             raise UserRepo.UserNotFound()
         return True

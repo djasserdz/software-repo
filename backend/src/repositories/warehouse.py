@@ -12,7 +12,6 @@ import logging
 
 
 class WarehouseRepo:
-
     class WarehouseNotFound(HTTPBaseException):
         code = status.HTTP_404_NOT_FOUND
         message = "Warehouse not found"

@@ -88,22 +88,9 @@ class GrainRepo:
         session: AsyncSession,
         skip: int = 0,
         limit: int = 100,
-        zone_id: Optional[int] = None,
-        appointment_id: Optional[int] = None,
-        delivery_id: Optional[int] = None,
     ) -> List[Grain]:
-        """Get all grains with optional filters"""
         try:
             stmt = select(Grain).where(Grain.deleted_at.is_(None))
-
-            if zone_id:
-                stmt = stmt.where(Grain.zone_id == zone_id)
-
-            if appointment_id:
-                stmt = stmt.where(Grain.appointment_id == appointment_id)
-
-            if delivery_id:
-                stmt = stmt.where(Grain.delivery_id == delivery_id)
 
             stmt = stmt.offset(skip).limit(limit).order_by(Grain.created_at.desc())
 
@@ -114,7 +101,6 @@ class GrainRepo:
 
     @staticmethod
     async def update(session: AsyncSession, grain_id: int, **kwargs) -> Optional[Grain]:
-        """Update grain by ID"""
         try:
             kwargs["updated_at"] = datetime.utcnow()
 
@@ -140,7 +126,6 @@ class GrainRepo:
 
     @staticmethod
     async def soft_delete(session: AsyncSession, grain_id: int) -> bool:
-        """Soft delete grain by setting deleted_at timestamp"""
         try:
             stmt = (
                 update(Grain)
@@ -158,7 +143,6 @@ class GrainRepo:
 
     @staticmethod
     async def hard_delete(session: AsyncSession, grain_id: int) -> bool:
-        """Hard delete grain from database"""
         try:
             stmt = delete(Grain).where(Grain.grain_id == grain_id)
 
@@ -173,23 +157,9 @@ class GrainRepo:
     @staticmethod
     async def count(
         session: AsyncSession,
-        zone_id: Optional[int] = None,
-        appointment_id: Optional[int] = None,
-        delivery_id: Optional[int] = None,
     ) -> int:
-        """Count grains with optional filters"""
         try:
             stmt = select(func.count(Grain.grain_id)).where(Grain.deleted_at.is_(None))
-
-            if zone_id:
-                stmt = stmt.where(Grain.zone_id == zone_id)
-
-            if appointment_id:
-                stmt = stmt.where(Grain.appointment_id == appointment_id)
-
-            if delivery_id:
-                stmt = stmt.where(Grain.delivery_id == delivery_id)
-
             result = await session.execute(stmt)
             return result.scalar_one()
         except Exception:
@@ -197,7 +167,6 @@ class GrainRepo:
 
     @staticmethod
     async def exists(session: AsyncSession, grain_id: int) -> bool:
-        """Check if grain exists"""
         try:
             stmt = select(Grain.grain_id).where(
                 Grain.grain_id == grain_id, Grain.deleted_at.is_(None)
