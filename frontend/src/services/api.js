@@ -8,7 +8,6 @@ const api = axios.create({
     'Content-Type': 'application/json'
   }
 });
-
 // Add token to requests
 api.interceptors.request.use(
   (config) => {
@@ -48,7 +47,7 @@ export const authAPI = {
 };
 
 // Appointment API
-export const appointmentAPI = {
+export const appointment = {
   create: (data) => api.post('/appointments', data),
   getMyAppointments: (status) => api.get('/appointments/my-appointments', { params: { status } }),
   getHistory: () => api.get('/appointments/history'),

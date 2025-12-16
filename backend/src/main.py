@@ -9,7 +9,7 @@ from src.routes.grain import router as grain_router
 from src.routes.storagezone import router as storagezone_router
 from src.routes.timeslot import router as time_router
 from src.routes.appointment import router as appointment_router
-
+from src.routes.location import router as location_router
 
 import os
 import logging
@@ -70,3 +70,4 @@ app.include_router(grain_router, prefix="/grain", tags=["grain"])
 app.include_router(storagezone_router, prefix="/zone", tags=["zone"])
 app.include_router(time_router, prefix="/time", tags=["time"])
 app.include_router(appointment_router, prefix="/appointment", tags=["appointment"])
+app.include_router(location_router, prefix="/location", tags=["location"])
