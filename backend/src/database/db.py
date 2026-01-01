@@ -41,8 +41,8 @@ class User(SQLModel, table=True):
     email: str = Field(nullable=False, unique=True)
     password: str = Field(nullable=False)
     salt: str = Field(nullable=False)
-    phone: str = Field(nullable=False)
-    address: str = Field(nullable=False)
+    phone: str = Field(default="", nullable=False)
+    address: str = Field(default="", nullable=False)
     role: UserRole = Field(nullable=False)
     email_verified_at: Optional[datetime] = None
     account_status: bool = Field(nullable=False)

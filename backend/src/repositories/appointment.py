@@ -103,10 +103,10 @@ class AppointmentRepo:
     @staticmethod
     async def get_all(
         session: AsyncSession,
+        zone_id: Optional[int] = None,
+        farmer_id: Optional[int] = None,
         skip: int = 0,
         limit: int = 100,
-        farmer_id: Optional[int] = None,
-        zone_id: Optional[int] = None,
         status: Optional[AppointmentStatus] = None,
     ) -> List[Appointment]:
         """Get all appointments with optional filters"""
@@ -130,6 +130,21 @@ class AppointmentRepo:
             return list(result.scalars().all())
         except Exception:
             raise AppointmentRepo.GetAllError()
+
+    @staticmethod
+    async def get_by_timeslot(
+        session: AsyncSession, timeslot_id: int
+    ) -> Optional[Appointment]:
+        """Get appointment by timeslot ID"""
+        try:
+            stmt = select(Appointment).where(
+                Appointment.timeslot_id == timeslot_id,
+                Appointment.deleted_at.is_(None),
+            )
+            result = await session.execute(stmt)
+            return result.scalar_one_or_none()
+        except Exception:
+            raise AppointmentRepo.GetError()
 
     @staticmethod
     async def update(

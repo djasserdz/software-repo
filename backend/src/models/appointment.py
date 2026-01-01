@@ -29,6 +29,26 @@ class AppointmentCreate(AppointmentBase):
     )
 
 
+class AppointmentCreateFromFrontend(BaseModel):
+    """Model for appointment creation from frontend (uses warehouseZoneId)"""
+    grainTypeId: int = Field(..., gt=0, alias="grainTypeId")
+    requestedQuantity: float = Field(..., gt=0, alias="requestedQuantity")
+    warehouseZoneId: int = Field(..., gt=0, alias="warehouseZoneId")
+    timeSlotId: int = Field(..., gt=0, alias="timeSlotId")
+
+    model_config = ConfigDict(
+        json_schema_extra={
+            "example": {
+                "grainTypeId": 1,
+                "requestedQuantity": 5000,
+                "warehouseZoneId": 1,
+                "timeSlotId": 1,
+            }
+        },
+        populate_by_name=True,
+    )
+
+
 class AppointmentUpdate(BaseModel):
     farmer_id: Optional[int] = Field(None, gt=0)
     zone_id: Optional[int] = Field(None, gt=0)

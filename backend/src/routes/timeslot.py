@@ -51,3 +51,28 @@ async def delete(time_id: int, session: AsyncSession = Depends(ConManager.get_se
     time = await TimeSlotService.delete_time(session, time_id)
     if time:
         return "Time deleted"
+
+
+@router.get("/available", description="Get available time slots for a zone")
+async def get_available(
+    zone_id: int = Query(..., description="Zone ID"),
+    grain_type_id: Optional[int] = Query(None, description="Grain type ID (optional)"),
+    session: AsyncSession = Depends(ConManager.get_session),
+):
+    """Get available time slots for a zone"""
+    slots = await TimeSlotService.get_available(session, zone_id, grain_type_id)
+    return {"data": slots}
+
+
+@router.post("/generate", description="Generate time slots for next day")
+async def generate(session: AsyncSession = Depends(ConManager.get_session)):
+    """Generate time slots for the next day based on templates"""
+    slots = await TimeSlotService.generate_timeslots_for_next_day(session)
+    return {"message": f"Generated {len(slots)} time slots for tomorrow", "slots": slots}
+
+
+@router.post("/generate-week", description="Generate time slots for the next week")
+async def generate_week(session: AsyncSession = Depends(ConManager.get_session)):
+    """Generate time slots for the next 7 days based on templates"""
+    slots = await TimeSlotService.generate_timeslots_for_next_week(session)
+    return {"message": f"Generated {len(slots)} time slots for the next week", "slots": slots}

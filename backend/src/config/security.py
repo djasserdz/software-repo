@@ -49,7 +49,7 @@ def verify_token(token: str) -> dict | None:
         return None
 
 
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="auth/login")
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="user/login")
 
 
 async def get_current_user(token: str = Depends(oauth2_scheme)) -> User:
@@ -64,11 +64,15 @@ async def get_current_user(token: str = Depends(oauth2_scheme)) -> User:
         if user_id is None:
             raise HTTPException(status_code=401, detail="Invalid token")
         user_id = int(user_id)
-    except (JWTError, TypeError, ValueError):
-        raise HTTPException(status_code=401, detail="Invalid token")
+    except (JWTError, TypeError, ValueError) as e:
+        raise HTTPException(status_code=401, detail=f"Invalid token: {str(e)}")
 
     async for session in ConManager.get_session():
-        user = await UserRepo.get_by_id(session, user_id)
-        if not user:
-            raise HTTPException(status_code=404, detail="User not found")
-        return user
+        try:
+            user = await UserRepo.get_by_id(session, user_id)
+            if not user:
+                raise HTTPException(status_code=404, detail="User not found")
+            return user
+        finally:
+            await session.close()
+            break

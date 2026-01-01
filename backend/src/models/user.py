@@ -50,11 +50,34 @@ class UserCreate(UserBase):
 class UserUpdate(BaseModel):
     name: Optional[str] = Field(None, min_length=2, max_length=100)
     email: Optional[EmailStr] = None
-    password: Optional[str] = Field(None, min_length=8, max_length=100)
+    phone: Optional[str] = None
+    address: Optional[str] = None
 
     model_config = ConfigDict(
         json_schema_extra={
-            "example": {"name": "John Updated", "email": "newemail@example.com"}
+            "example": {
+                "name": "John Updated",
+                "email": "newemail@example.com",
+                "phone": "1234567890",
+                "address": "123 Main Street"
+            }
+        }
+    )
+
+
+# --------------------------
+# Password change
+# --------------------------
+class PasswordChange(BaseModel):
+    currentPassword: str = Field(..., min_length=1)
+    newPassword: str = Field(..., min_length=8, max_length=100)
+
+    model_config = ConfigDict(
+        json_schema_extra={
+            "example": {
+                "currentPassword": "OldPassword123",
+                "newPassword": "NewPassword123"
+            }
         }
     )
 

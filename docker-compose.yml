@@ -40,6 +40,7 @@ services:
       - db
 
     networks:
+      - public_net
       - private_net   
 
     restart: unless-stopped
@@ -64,21 +65,27 @@ services:
 
 
   frontend:
-    image: node:20-alpine
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      args:
+        VITE_API_URL: /api
     container_name: mahsoul_frontend
 
-    working_dir: /app
-    command: sh -c "npm install && npm run dev -- --host"
-
-    volumes:
-      - ./frontend:/app   
     ports:
-      - "3000:3000"       
+      - "3000:80"
+
+    depends_on:
+      - backend
 
     networks:
       - public_net        
+      - private_net
 
     restart: unless-stopped
+    environment:
+      - BACKEND_HOST=backend
+      - BACKEND_PORT=8000
 
 
   reverse_proxy:
@@ -88,14 +95,8 @@ services:
     ports:
       - "80:80"        
 
-    environment:
-      BACKEND: backend
-      BACKEND_PORT: 8000
-      FRONTEND: frontend
-      FRONTEND_PORT: 3000
-
     volumes:
-      - ./reverse_proxy/nginx.conf:/etc/nginx/templates/default.conf.template
+      - ./reverse_proxy/nginx.conf:/etc/nginx/conf.d/default.conf:ro
 
     depends_on:
       - backend

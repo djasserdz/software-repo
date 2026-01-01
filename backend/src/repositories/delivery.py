@@ -116,13 +116,22 @@ class DeliveryRepo:
         skip: int = 0,
         limit: int = 100,
         appointment_id: Optional[int] = None,
+        farmer_id: Optional[int] = None,
     ) -> List[Delivery]:
         """Get all deliveries with optional filters"""
         try:
+            from src.database.db import Appointment
+            
             stmt = select(Delivery).where(Delivery.deleted_at.is_(None))
 
             if appointment_id:
                 stmt = stmt.where(Delivery.appointment_id == appointment_id)
+            
+            if farmer_id:
+                # Join with appointments to filter by farmer_id
+                stmt = stmt.join(Appointment, Delivery.appointment_id == Appointment.appointment_id)
+                stmt = stmt.where(Appointment.farmer_id == farmer_id)
+                stmt = stmt.where(Appointment.deleted_at.is_(None))
 
             stmt = stmt.offset(skip).limit(limit).order_by(Delivery.created_at.desc())
 

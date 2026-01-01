@@ -61,12 +61,6 @@ class StorageZoneRepo:
     ) -> StorageZone:
         try:
             zone_dict = zone_data.model_dump()
-
-            if zone_dict.get("available_capacity", 0) > zone_dict.get(
-                "total_capacity", 0
-            ):
-                raise StorageZoneRepo.CapacityError()
-
             orm_zone = StorageZone(**zone_dict)
             session.add(orm_zone)
             await session.commit()
@@ -75,9 +69,6 @@ class StorageZoneRepo:
         except IntegrityError:
             await session.rollback()
             raise StorageZoneRepo.CreateError()
-        except StorageZoneRepo.CapacityError:
-            await session.rollback()
-            raise
         except Exception:
             await session.rollback()
             raise StorageZoneRepo.CreateError()
@@ -133,10 +124,6 @@ class StorageZoneRepo:
         session: AsyncSession, zone_id: int, **kwargs
     ) -> Optional[StorageZone]:
         try:
-            if "available_capacity" in kwargs and "total_capacity" in kwargs:
-                if kwargs["available_capacity"] > kwargs["total_capacity"]:
-                    raise StorageZoneRepo.CapacityError()
-
             kwargs["updated_at"] = datetime.utcnow()
 
             stmt = (
@@ -154,9 +141,6 @@ class StorageZoneRepo:
                 raise StorageZoneRepo.StorageZoneNotFound()
             return updated
         except StorageZoneRepo.StorageZoneNotFound:
-            raise
-        except StorageZoneRepo.CapacityError:
-            await session.rollback()
             raise
         except Exception:
             await session.rollback()

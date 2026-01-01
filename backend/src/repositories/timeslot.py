@@ -52,12 +52,14 @@ class TimeSlotRepo:
         message = "Failed to check time slot existence"
 
     @staticmethod
-    async def create(session: AsyncSession, timeslot_data: TimeSlotCreate) -> TimeSlot:
+    async def create(session: AsyncSession, timeslot_data) -> TimeSlot:
+        """Create a new time slot. Accepts either TimeSlotCreate model or dict"""
         try:
-            timeslot_dict = timeslot_data.model_dump()
-
-            if timeslot_dict.get("end_at") <= timeslot_dict.get("start_at"):
-                raise TimeSlotRepo.InvalidTimeRange()
+            # Handle both Pydantic model and dict inputs
+            if hasattr(timeslot_data, "model_dump"):
+                timeslot_dict = timeslot_data.model_dump()
+            else:
+                timeslot_dict = timeslot_data
 
             orm_timeslot = TimeSlot(**timeslot_dict)
             session.add(orm_timeslot)
@@ -67,9 +69,6 @@ class TimeSlotRepo:
         except IntegrityError:
             await session.rollback()
             raise TimeSlotRepo.CreateError()
-        except TimeSlotRepo.InvalidTimeRange:
-            await session.rollback()
-            raise
         except Exception:
             await session.rollback()
             raise TimeSlotRepo.CreateError()
@@ -119,10 +118,6 @@ class TimeSlotRepo:
         session: AsyncSession, time_id: int, **kwargs
     ) -> Optional[TimeSlot]:
         try:
-            if "start_at" in kwargs and "end_at" in kwargs:
-                if kwargs["end_at"] <= kwargs["start_at"]:
-                    raise TimeSlotRepo.InvalidTimeRange()
-
             kwargs["updated_at"] = datetime.utcnow()
 
             stmt = (
@@ -140,9 +135,6 @@ class TimeSlotRepo:
                 raise TimeSlotRepo.TimeSlotNotFound()
             return updated
         except TimeSlotRepo.TimeSlotNotFound:
-            raise
-        except TimeSlotRepo.InvalidTimeRange:
-            await session.rollback()
             raise
         except Exception:
             await session.rollback()
@@ -210,3 +202,19 @@ class TimeSlotRepo:
             return result.scalar_one_or_none() is not None
         except Exception:
             raise TimeSlotRepo.ExistsError()
+
+    @staticmethod
+    async def get_by_zone_and_start(
+        session: AsyncSession, zone_id: int, start_at: datetime
+    ) -> Optional[TimeSlot]:
+        """Get time slot by zone ID and start time"""
+        try:
+            stmt = select(TimeSlot).where(
+                TimeSlot.zone_id == zone_id,
+                TimeSlot.start_at == start_at,
+                TimeSlot.deleted_at.is_(None),
+            )
+            result = await session.execute(stmt)
+            return result.scalar_one_or_none()
+        except Exception:
+            raise TimeSlotRepo.GetError()

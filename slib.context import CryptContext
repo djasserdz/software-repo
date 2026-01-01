@@ -1,5 +1,0 @@
- user_id | username  |                           password                           |               salt               | first_name | last_name |         created_at         
----------+-----------+--------------------------------------------------------------+----------------------------------+------------+-----------+----------------------------
-       1 | djasserdz | $2b$12$Ki7/nw0wwmjpCh.HHNGhCuv5hYdliyuFTX/KPT3SU/bSlyzc4HkKG | 1c220b022618e6ddfc9bdb35ca44828c | djasser    | zouaoui   | 2025-11-25 23:07:52.857008
-(1 row)
-
