@@ -134,7 +134,7 @@ import { ref, onMounted } from 'vue'
 import { warehouseAPI } from '../api/warehouse'
 import { grainAPI } from '../api/grain'
 import { appointmentAPI } from '../api/appointment'
-import { authAPI } from '../api/auth'
+import { userAPI } from '../api/user'
 import Layout from '../components/Layout.vue'
 
 const stats = ref({
@@ -149,24 +149,31 @@ const loading = ref(true)
 
 onMounted(async () => {
   try {
-    const [warehouses, appointments, grains, users] = await Promise.all([
+    const results = await Promise.allSettled([
       warehouseAPI.getAll(),
       appointmentAPI.getAll(),
       grainAPI.getAll(),
-      authAPI.getCurrentUser().catch(() => ({ data: [] })),
+      userAPI.getAll(),
     ])
+
+    const warehouses = results[0].status === 'fulfilled' ? results[0].value : { data: [] }
+    const appointments = results[1].status === 'fulfilled' ? results[1].value : { data: [] }
+    const grains = results[2].status === 'fulfilled' ? results[2].value : { data: [] }
+    const users = results[3].status === 'fulfilled' ? results[3].value : { data: [] }
 
     stats.value = {
       warehouses: warehouses.data?.length || 0,
       appointments: appointments.data?.length || 0,
       grains: grains.data?.length || 0,
-      totalUsers: 0, // Would need a users API endpoint
+      totalUsers: users.data?.length || 0,
     }
 
-    recentActivity.value = [
-      { title: 'New appointment created', date: new Date().toLocaleDateString() },
-      { title: 'Warehouse updated', date: new Date().toLocaleDateString() },
-    ]
+    // Get recent appointments for activity
+    const recentAppts = (appointments.data || []).slice(0, 3)
+    recentActivity.value = recentAppts.map(apt => ({
+      title: `Appointment #${apt.appointment_id} - ${apt.status}`,
+      date: new Date(apt.created_at).toLocaleDateString(),
+    }))
   } catch (error) {
     console.error('Error loading dashboard data:', error)
   } finally {

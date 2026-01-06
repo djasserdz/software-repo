@@ -10,6 +10,10 @@ export const geolocationAPI = {
       params: { latitude, longitude },
     }),
   updateFarmerLocation: (data) => api.post('/geolocation/update-location', data),
+  reverseGeocode: (latitude, longitude) =>
+    api.get('/location/coordinates/', {
+      params: { latitude, longitude },
+    }),
 }
 
 

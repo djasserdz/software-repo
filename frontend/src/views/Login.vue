@@ -87,7 +87,19 @@ const handleLogin = async () => {
 
   try {
     await authStore.login(form.value.email, form.value.password)
-    const redirect = route.query.redirect || '/dashboard'
+    
+    // Redirect based on user role
+    let redirect = route.query.redirect
+    if (!redirect) {
+      if (authStore.isAdmin) {
+        redirect = '/admin'
+      } else if (authStore.isWarehouseAdmin) {
+        redirect = '/warehouse-admin'
+      } else {
+        redirect = '/dashboard'
+      }
+    }
+    
     router.push(redirect)
   } catch (err) {
     error.value = authStore.error || 'Invalid email or password'

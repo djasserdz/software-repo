@@ -6,7 +6,7 @@ from decimal import Decimal
 
 class GrainBase(BaseModel):
     name: str = Field(..., min_length=1, max_length=200)
-    price: Decimal = Field(..., ge=0, decimal_places=2)
+    price: Decimal = Field(..., ge=0, decimal_places=2, description="Price in DZD (Algerian Dinar)")
 
 
 class GrainCreate(GrainBase):
@@ -14,7 +14,7 @@ class GrainCreate(GrainBase):
         json_schema_extra={
             "example": {
                 "name": "Premium Wheat",
-                "price": "150.50",
+                "price": "150.50",  # in DZD
             }
         }
     )
@@ -22,10 +22,15 @@ class GrainCreate(GrainBase):
 
 class GrainUpdate(BaseModel):
     name: Optional[str] = Field(None, min_length=1, max_length=200)
-    price: Optional[Decimal] = Field(None, ge=0, decimal_places=2)
+    price: Optional[Decimal] = Field(None, ge=0, decimal_places=2, description="Price in DZD (Algerian Dinar)")
 
     model_config = ConfigDict(
-        json_schema_extra={"example": {"name": "Updated Grain Name", "price": "175.00"}}
+        json_schema_extra={
+            "example": {
+                "name": "Updated Grain Name",
+                "price": "175.00"  # in DZD
+            }
+        }
     )
 
 

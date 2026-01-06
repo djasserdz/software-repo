@@ -14,11 +14,19 @@ router = APIRouter()
 async def get_nearest_warehouses(
     lat: float = Query(..., description="Latitude"),
     lng: float = Query(..., description="Longitude"),
-    grainType: Optional[int] = Query(None, description="Grain type ID"),
+    grainType: Optional[int] = Query(None, description="Grain type ID to filter by"),
     limit: int = Query(10, ge=1, le=50, description="Maximum number of results"),
     session: AsyncSession = Depends(ConManager.get_session),
 ):
-    """Get nearest warehouses that have zones for the specified grain type"""
+    """
+    Get nearest warehouses that have zones for the specified grain type.
+    If grainType is not provided, returns all warehouses sorted by distance.
+    
+    Returns:
+    - distance: in kilometers (km)
+    - capacity: in kilograms (kg)
+    - currency: prices in DZD (Algerian Dinar)
+    """
     try:
         warehouses = await GeolocationService.get_nearest_warehouses(
             session=session,
@@ -27,7 +35,16 @@ async def get_nearest_warehouses(
             grain_type_id=grainType,
             limit=limit,
         )
-        return {"data": {"allWarehouses": warehouses}}
+        return {
+            "data": {
+                "allWarehouses": warehouses,
+                "unit": {
+                    "distance": "km",
+                    "capacity": "kg",
+                    "currency": "DZD"
+                }
+            }
+        }
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,

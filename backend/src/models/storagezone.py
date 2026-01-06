@@ -7,8 +7,8 @@ from src.database.db import ZoneStatus
 class StorageZoneBase(BaseModel):
     name: str = Field(..., min_length=1, max_length=200)
     grain_type_id: int = Field(..., gt=0)
-    total_capacity: int = Field(..., gt=0)
-    available_capacity: int = Field(..., ge=0)
+    total_capacity: int = Field(..., gt=0, description="Total capacity in kg (kilograms)")
+    available_capacity: int = Field(..., ge=0, description="Available capacity in kg (kilograms)")
     status: ZoneStatus
 
     @model_validator(mode="after")
@@ -24,8 +24,8 @@ class StorageZoneCreate(StorageZoneBase):
             "example": {
                 "name": "Zone A - Wheat Storage",
                 "grain_type_id": 1,
-                "total_capacity": 10000,
-                "available_capacity": 5000,
+                "total_capacity": 10000,  # in kg
+                "available_capacity": 5000,  # in kg
                 "status": "active",
             }
         }
@@ -35,8 +35,8 @@ class StorageZoneCreate(StorageZoneBase):
 class StorageZoneUpdate(BaseModel):
     name: Optional[str] = Field(None, min_length=1, max_length=200)
     grain_type_id: Optional[int] = Field(None, gt=0)
-    total_capacity: Optional[int] = Field(None, gt=0)
-    available_capacity: Optional[int] = Field(None, ge=0)
+    total_capacity: Optional[int] = Field(None, gt=0, description="Total capacity in kg (kilograms)")
+    available_capacity: Optional[int] = Field(None, ge=0, description="Available capacity in kg (kilograms)")
     status: Optional[ZoneStatus] = None
     warehouse_id: Optional[int] = Field(None, gt=0)
 
@@ -44,7 +44,7 @@ class StorageZoneUpdate(BaseModel):
         json_schema_extra={
             "example": {
                 "name": "Updated Zone Name",
-                "available_capacity": 3000,
+                "available_capacity": 3000,  # in kg
                 "status": "not_active",
             }
         }

@@ -12,16 +12,34 @@ import logging
 class DeliveryService:
     @staticmethod
     async def create_delivery(
-        session: AsyncSession, data: DeliveryCreate
+        session: AsyncSession, data: DeliveryCreate, current_user=None
     ):
         """Create a new delivery"""
+        from src.models.user import UserRole
+        from src.repositories.warehouse import WarehouseRepo
+        from src.repositories.storagezone import StorageZoneRepo
+        
         try:
             # Verify appointment exists
             appointment = await AppointmentRepo.get_by_id(
                 session, data.appointment_id
             )
+            
+            # Check warehouse admin access
+            if current_user and current_user.role == UserRole.WAREHOUSE_ADMIN:
+                zone = await StorageZoneRepo.get_by_id(session, appointment.zone_id)
+                warehouse = await WarehouseRepo.get_by_id(session, zone.warehouse_id)
+                
+                if warehouse.manager_id != current_user.user_id:
+                    raise HTTPException(
+                        status_code=403,
+                        detail="You can only create deliveries for appointments in your own warehouse"
+                    )
+            
             delivery = await DeliveryRepo.create(session, data)
             return delivery
+        except HTTPException:
+            raise
         except Exception as e:
             await session.rollback()
             logging.exception(f"Error creating delivery: {e}")
@@ -34,9 +52,49 @@ class DeliveryService:
         farmer_id: Optional[int] = None,
         skip: int = 0,
         limit: int = 100,
+        current_user=None,
     ):
         """Get all deliveries with optional filters"""
+        from src.models.user import UserRole
+        
         try:
+            # If warehouse admin, we need to filter by their warehouse
+            # This requires getting all appointments in their zones
+            if current_user and current_user.role == UserRole.WAREHOUSE_ADMIN:
+                from src.repositories.warehouse import WarehouseRepo
+                from src.repositories.storagezone import StorageZoneRepo
+                from src.repositories.appointment import AppointmentRepo
+                
+                # Get all zones for this warehouse admin
+                warehouses = await WarehouseRepo.get_all(
+                    session, manager_id=current_user.user_id
+                )
+                if not warehouses:
+                    return []
+                
+                warehouse_id = warehouses[0].warehouse_id
+                zones = await StorageZoneRepo.get_all(session, warehouse_id=warehouse_id)
+                zone_ids = [z.zone_id for z in zones]
+                
+                if not zone_ids:
+                    return []
+                
+                # Get all appointments in these zones
+                all_deliveries = []
+                for z_id in zone_ids:
+                    appointments = await AppointmentRepo.get_all(session, zone_id=z_id)
+                    for apt in appointments:
+                        # Get deliveries for this appointment
+                        deliveries = await DeliveryRepo.get_all(
+                            session=session,
+                            appointment_id=apt.appointment_id,
+                            skip=0,
+                            limit=1000,
+                        )
+                        all_deliveries.extend(deliveries)
+                
+                return all_deliveries[skip:skip+limit]
+            
             deliveries = await DeliveryRepo.get_all(
                 session=session,
                 appointment_id=appointment_id,
@@ -111,11 +169,35 @@ class DeliveryService:
             )
 
     @staticmethod
-    async def get_by_id(session: AsyncSession, delivery_id: int):
+    async def get_by_id(session: AsyncSession, delivery_id: int, current_user=None):
         """Get delivery by ID"""
+        from src.models.user import UserRole
+        from src.repositories.warehouse import WarehouseRepo
+        from src.repositories.storagezone import StorageZoneRepo
+        
         try:
             delivery = await DeliveryRepo.get_by_id(session, delivery_id)
+            
+            # Check warehouse admin access
+            if current_user and current_user.role == UserRole.WAREHOUSE_ADMIN:
+                # Get appointment for this delivery
+                appointment = await AppointmentRepo.get_by_id(
+                    session, delivery.appointment_id
+                )
+                # Get zone for this appointment
+                zone = await StorageZoneRepo.get_by_id(session, appointment.zone_id)
+                # Get warehouse for this zone
+                warehouse = await WarehouseRepo.get_by_id(session, zone.warehouse_id)
+                
+                if warehouse.manager_id != current_user.user_id:
+                    raise HTTPException(
+                        status_code=403,
+                        detail="You can only view deliveries from your own warehouse"
+                    )
+            
             return delivery
+        except HTTPException:
+            raise
         except Exception as e:
             logging.exception(f"Error getting delivery: {e}")
             raise

@@ -15,11 +15,14 @@ class StorageService:
         try:
             warehouse = await WarehouseRepo.get_by_id(session, warehouse_id)
             grain = await GrainRepo.get_by_id(session, data.grain_type_id)
-            zone = await StorageZoneRepo.create(session, data)
+            # Add warehouse_id to the zone data
+            zone_dict = data.model_dump()
+            zone_dict['warehouse_id'] = warehouse_id
+            zone = await StorageZoneRepo.create(session, zone_dict)
             return zone
         except Exception as e:
             await session.rollback()
-            logging.exception(f"Error happend : {e}")
+            logging.exception(f"Error happened: {e}")
             raise
 
     @staticmethod

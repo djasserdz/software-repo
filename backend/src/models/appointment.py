@@ -6,7 +6,7 @@ from ..database.db import AppointmentStatus
 
 class AppointmentBase(BaseModel):
     grain_type_id: int = Field(..., gt=0)
-    requested_quantity: int = Field(..., gt=0)
+    requested_quantity: int = Field(..., gt=0, description="Requested quantity in kg (kilograms)")
     status: AppointmentStatus
 
 
@@ -22,7 +22,7 @@ class AppointmentCreate(AppointmentBase):
                 "zone_id": 1,
                 "grain_type_id": 1,
                 "timeslot_id": 1,
-                "requested_quantity": 5000,
+                "requested_quantity": 5000,  # in kg
                 "status": "pending",
             }
         }
@@ -32,7 +32,7 @@ class AppointmentCreate(AppointmentBase):
 class AppointmentCreateFromFrontend(BaseModel):
     """Model for appointment creation from frontend (uses warehouseZoneId)"""
     grainTypeId: int = Field(..., gt=0, alias="grainTypeId")
-    requestedQuantity: float = Field(..., gt=0, alias="requestedQuantity")
+    requestedQuantity: float = Field(..., gt=0, alias="requestedQuantity", description="Requested quantity in kg (kilograms)")
     warehouseZoneId: int = Field(..., gt=0, alias="warehouseZoneId")
     timeSlotId: int = Field(..., gt=0, alias="timeSlotId")
 
@@ -40,7 +40,7 @@ class AppointmentCreateFromFrontend(BaseModel):
         json_schema_extra={
             "example": {
                 "grainTypeId": 1,
-                "requestedQuantity": 5000,
+                "requestedQuantity": 5000,  # in kg
                 "warehouseZoneId": 1,
                 "timeSlotId": 1,
             }
@@ -54,12 +54,15 @@ class AppointmentUpdate(BaseModel):
     zone_id: Optional[int] = Field(None, gt=0)
     grain_type_id: Optional[int] = Field(None, gt=0)
     timeslot_id: Optional[int] = Field(None, gt=0)
-    requested_quantity: Optional[int] = Field(None, gt=0)
+    requested_quantity: Optional[int] = Field(None, gt=0, description="Requested quantity in kg (kilograms)")
     status: Optional[AppointmentStatus] = None
 
     model_config = ConfigDict(
         json_schema_extra={
-            "example": {"requested_quantity": 6000, "status": "accepted"}
+            "example": {
+                "requested_quantity": 6000,  # in kg
+                "status": "accepted"
+            }
         }
     )
 

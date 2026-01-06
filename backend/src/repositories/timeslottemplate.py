@@ -55,11 +55,57 @@ class TimeSlotTemplateRepo:
     async def create(session: AsyncSession, data: dict) -> TimeSlotTemplate:
         """Create a new time slot template"""
         try:
+            from datetime import time as time_type
+            
+            # Ensure time objects are properly handled
+            start_time = data.get('start_time')
+            end_time = data.get('end_time')
+            
+            if isinstance(start_time, str):
+                # Try different time formats
+                try:
+                    if len(start_time.split(':')) == 2:
+                        # Format: HH:MM
+                        data['start_time'] = datetime.strptime(start_time, '%H:%M').time()
+                    else:
+                        # Format: HH:MM:SS
+                        data['start_time'] = datetime.strptime(start_time, '%H:%M:%S').time()
+                except ValueError as e:
+                    logging.error(f"Invalid start_time format: {start_time}, error: {e}")
+                    raise TimeSlotTemplateRepo.InvalidTimeRange()
+            
+            if isinstance(end_time, str):
+                # Try different time formats
+                try:
+                    if len(end_time.split(':')) == 2:
+                        # Format: HH:MM
+                        data['end_time'] = datetime.strptime(end_time, '%H:%M').time()
+                    else:
+                        # Format: HH:MM:SS
+                        data['end_time'] = datetime.strptime(end_time, '%H:%M:%S').time()
+                except ValueError as e:
+                    logging.error(f"Invalid end_time format: {end_time}, error: {e}")
+                    raise TimeSlotTemplateRepo.InvalidTimeRange()
+            
+            # Ensure we have time objects for validation
+            start_time_obj = data.get('start_time')
+            end_time_obj = data.get('end_time')
+            
+            if not isinstance(start_time_obj, time_type) or not isinstance(end_time_obj, time_type):
+                raise TimeSlotTemplateRepo.InvalidTimeRange()
+            
+            # Validate that end_time is after start_time
+            if end_time_obj <= start_time_obj:
+                raise TimeSlotTemplateRepo.InvalidTimeRange()
+            
             template = TimeSlotTemplate(**data)
             session.add(template)
             await session.commit()
             await session.refresh(template)
             return template
+        except TimeSlotTemplateRepo.InvalidTimeRange:
+            await session.rollback()
+            raise
         except IntegrityError:
             await session.rollback()
             raise TimeSlotTemplateRepo.CreateError()

@@ -4,27 +4,52 @@
 
 @layer base {
   body {
-    @apply bg-gray-50 text-gray-900;
+    @apply bg-primary-50 text-gray-900;
+  }
+  
+  h1, h2, h3, h4, h5, h6 {
+    @apply text-primary-700;
   }
 }
 
 @layer components {
   .btn-primary {
-    @apply bg-primary-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-primary-700 transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed;
+    @apply bg-primary-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-primary-700 transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed shadow-sm;
+  }
+  
+  .btn-primary-light {
+    @apply bg-primary-100 text-primary-700 px-4 py-2 rounded-lg font-medium hover:bg-primary-200 transition-colors duration-200;
   }
   
   .btn-secondary {
     @apply bg-gray-200 text-gray-800 px-4 py-2 rounded-lg font-medium hover:bg-gray-300 transition-colors duration-200;
   }
   
+  .btn-accent {
+    @apply bg-accent-400 text-white px-4 py-2 rounded-lg font-medium hover:bg-accent-500 transition-colors duration-200;
+  }
+  
   .input-field {
-    @apply w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent outline-none transition-all;
+    @apply w-full px-4 py-2 border border-primary-200 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent outline-none transition-all bg-white;
   }
   
   .card {
-    @apply bg-white rounded-xl shadow-sm border border-gray-200 p-6;
+    @apply bg-white rounded-xl shadow-sm border border-primary-100 p-6 hover:shadow-md transition-shadow duration-200;
+  }
+  
+  .badge-success {
+    @apply bg-green-100 text-green-800 px-3 py-1 rounded-full text-sm font-medium;
+  }
+  
+  .badge-warning {
+    @apply bg-accent-100 text-accent-700 px-3 py-1 rounded-full text-sm font-medium;
+  }
+  
+  .badge-error {
+    @apply bg-red-100 text-red-800 px-3 py-1 rounded-full text-sm font-medium;
   }
 }
+
 
 
 

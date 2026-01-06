@@ -74,6 +74,62 @@ const router = createRouter({
       component: () => import('../views/Profile.vue'),
       meta: { requiresAuth: true },
     },
+    
+    // ============================================
+    // System Admin Routes (requiresAdmin: true)
+    // ============================================
+    {
+      path: '/admin/users',
+      name: 'AdminUsers',
+      component: () => import('../views/admin/AdminUsers.vue'),
+      meta: { requiresAuth: true, requiresAdmin: true },
+    },
+    {
+      path: '/admin/warehouses',
+      name: 'AdminWarehouses',
+      component: () => import('../views/admin/AdminWarehouses.vue'),
+      meta: { requiresAuth: true, requiresAdmin: true },
+    },
+    {
+      path: '/admin/grains',
+      name: 'AdminGrains',
+      component: () => import('../views/admin/AdminGrains.vue'),
+      meta: { requiresAuth: true, requiresAdmin: true },
+    },
+    {
+      path: '/admin/appointments',
+      name: 'AdminAppointments',
+      component: () => import('../views/admin/AdminAppointments.vue'),
+      meta: { requiresAuth: true, requiresAdmin: true },
+    },
+    
+    // ============================================
+    // Warehouse Admin Routes (requiresWarehouseAdmin: true)
+    // ============================================
+    {
+      path: '/warehouse-admin/warehouses',
+      name: 'WarehouseAdminWarehouses',
+      component: () => import('../views/warehouse-admin/WarehouseAdminWarehouses.vue'),
+      meta: { requiresAuth: true, requiresWarehouseAdmin: true },
+    },
+    {
+      path: '/warehouse-admin/zones',
+      name: 'WarehouseAdminZones',
+      component: () => import('../views/warehouse-admin/WarehouseAdminZones.vue'),
+      meta: { requiresAuth: true, requiresWarehouseAdmin: true },
+    },
+    {
+      path: '/warehouse-admin/timeslots',
+      name: 'WarehouseAdminTimeSlots',
+      component: () => import('../views/warehouse-admin/WarehouseAdminTimeSlots.vue'),
+      meta: { requiresAuth: true, requiresWarehouseAdmin: true },
+    },
+    {
+      path: '/warehouse-admin/appointments',
+      name: 'WarehouseAdminAppointments',
+      component: () => import('../views/warehouse-admin/WarehouseAdminAppointments.vue'),
+      meta: { requiresAuth: true, requiresWarehouseAdmin: true },
+    },
   ],
 })
 

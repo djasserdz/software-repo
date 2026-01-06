@@ -161,11 +161,15 @@ const loading = ref(true)
 
 onMounted(async () => {
   try {
-    const [warehouses, appointments, zones] = await Promise.all([
+    const results = await Promise.allSettled([
       warehouseAPI.getAll(),
       appointmentAPI.getAll({ status: 'pending' }),
       zoneAPI.getAll(),
     ])
+
+    const warehouses = results[0].status === 'fulfilled' ? results[0].value : { data: [] }
+    const appointments = results[1].status === 'fulfilled' ? results[1].value : { data: [] }
+    const zones = results[2].status === 'fulfilled' ? results[2].value : { data: [] }
 
     stats.value = {
       warehouses: warehouses.data?.length || 0,
@@ -174,8 +178,13 @@ onMounted(async () => {
       timeSlots: 0, // Would need to count from zones
     }
 
-    const allAppointments = await appointmentAPI.getAll()
-    recentAppointments.value = (allAppointments.data || []).slice(0, 5)
+    try {
+      const allAppointments = await appointmentAPI.getAll()
+      recentAppointments.value = (allAppointments.data || []).slice(0, 5)
+    } catch (error) {
+      console.error('Error loading recent appointments:', error)
+      recentAppointments.value = []
+    }
   } catch (error) {
     console.error('Error loading dashboard data:', error)
   } finally {

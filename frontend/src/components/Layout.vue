@@ -16,7 +16,7 @@
                 :to="item.to"
                 class="inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium transition-colors"
                 :class="[
-                  $route.path.startsWith(item.to)
+                  route.path.startsWith(item.to)
                     ? 'border-primary-500 text-gray-900'
                     : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700',
                 ]"
@@ -31,10 +31,10 @@
               class="text-gray-700 hover:text-gray-900 px-3 py-2 rounded-md text-sm font-medium"
             >
               <div class="flex items-center space-x-2">
-                <span>{{ user?.name }}</span>
+                <span>{{ user?.name || 'User' }}</span>
                 <div class="w-8 h-8 bg-primary-100 rounded-full flex items-center justify-center">
                   <span class="text-primary-600 font-semibold text-sm">
-                    {{ user?.name?.charAt(0).toUpperCase() }}
+                    {{ user?.name?.charAt(0)?.toUpperCase() || 'U' }}
                   </span>
                 </div>
               </div>
@@ -50,7 +50,7 @@
       </div>
     </nav>
 
-    <main class="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
+    <main class="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
       <slot />
     </main>
   </div>
@@ -58,10 +58,11 @@
 
 <script setup>
 import { computed } from 'vue'
-import { useRouter } from 'vue-router'
+import { useRouter, useRoute } from 'vue-router'
 import { useAuthStore } from '../stores/auth'
 
 const router = useRouter()
+const route = useRoute()
 const authStore = useAuthStore()
 
 const user = computed(() => authStore.user)

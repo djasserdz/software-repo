@@ -52,7 +52,7 @@
                   <div class="mt-3">
                     <div class="flex justify-between text-sm text-gray-600 mb-1">
                       <span>Capacity</span>
-                      <span>{{ zone.available_capacity }} / {{ zone.total_capacity }} tons</span>
+                      <span>{{ formatNumber(zone.available_capacity * 1000) }} / {{ formatNumber(zone.total_capacity * 1000) }} kg</span>
                     </div>
                     <div class="w-full bg-gray-200 rounded-full h-2">
                       <div
@@ -89,14 +89,8 @@
                   </dd>
                 </div>
                 <div>
-                  <dt class="text-sm font-medium text-gray-500">Location</dt>
-                  <dd class="mt-1 text-sm text-gray-900">{{ warehouse.location }}</dd>
-                </div>
-                <div>
-                  <dt class="text-sm font-medium text-gray-500">Coordinates</dt>
-                  <dd class="mt-1 text-sm text-gray-900">
-                    {{ warehouse.x_float }}, {{ warehouse.y_float }}
-                  </dd>
+                  <dt class="text-sm font-medium text-gray-500">Address</dt>
+                  <dd class="mt-1 text-sm text-gray-900">{{ warehouseAddress || warehouse.location || 'Loading address...' }}</dd>
                 </div>
               </dl>
             </div>
@@ -114,6 +108,7 @@ import { useAuthStore } from '../stores/auth'
 import { warehouseAPI } from '../api/warehouse'
 import { zoneAPI } from '../api/zone'
 import { grainAPI } from '../api/grain'
+import { locationAPI } from '../api/location'
 import Layout from '../components/Layout.vue'
 
 const route = useRoute()
@@ -125,6 +120,7 @@ const zones = ref([])
 const grains = ref([])
 const loading = ref(true)
 const zonesLoading = ref(true)
+const warehouseAddress = ref('')
 
 const isFarmer = computed(() => authStore.isFarmer)
 
@@ -141,6 +137,36 @@ onMounted(async () => {
     warehouse.value = warehouseRes.data
     zones.value = zonesRes.data || []
     grains.value = grainsRes.data || []
+    
+    // Get address from coordinates
+    if (warehouse.value && warehouse.value.x_float && warehouse.value.y_float) {
+      try {
+        const response = await locationAPI.getLocationByCoordinates(
+          warehouse.value.y_float,
+          warehouse.value.x_float
+        )
+        const data = response.data
+        if (data?.display_name) {
+          warehouseAddress.value = data.display_name
+        } else if (data?.address) {
+          const addr = data.address
+          const parts = [
+            addr.road,
+            addr.city || addr.town || addr.village,
+            addr.state || addr.region,
+            addr.country
+          ].filter(Boolean)
+          warehouseAddress.value = parts.length > 0 ? parts.join(', ') : warehouse.value.location
+        } else {
+          warehouseAddress.value = warehouse.value.location
+        }
+      } catch (error) {
+        console.error('Error getting address:', error)
+        warehouseAddress.value = warehouse.value.location
+      }
+    } else {
+      warehouseAddress.value = warehouse.value?.location || ''
+    }
   } catch (error) {
     console.error('Error loading warehouse:', error)
   } finally {
@@ -152,6 +178,14 @@ onMounted(async () => {
 const getGrainName = (grainId) => {
   const grain = grains.value.find((g) => g.grain_id === grainId)
   return grain ? grain.name : 'Unknown'
+}
+
+const formatNumber = (num) => {
+  if (!num) return '0'
+  return new Intl.NumberFormat('ar-DZ', {
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 0
+  }).format(num)
 }
 
 const bookAppointment = (zone) => {

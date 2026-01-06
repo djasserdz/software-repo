@@ -5,7 +5,7 @@ from datetime import datetime
 
 class DeliveryBase(BaseModel):
     receipt_code: str = Field(..., min_length=1, max_length=100)
-    total_price: str = Field(..., min_length=1)
+    total_price: str = Field(..., min_length=1, description="Total price in DZD (Algerian Dinar)")
 
 
 class DeliveryCreate(DeliveryBase):
@@ -16,7 +16,7 @@ class DeliveryCreate(DeliveryBase):
             "example": {
                 "appointment_id": 1,
                 "receipt_code": "REC-2024-001",
-                "total_price": "75000.00",
+                "total_price": "75000.00",  # in DZD
             }
         }
     )
@@ -25,13 +25,13 @@ class DeliveryCreate(DeliveryBase):
 class DeliveryUpdate(BaseModel):
     appointment_id: Optional[int] = Field(None, gt=0)
     receipt_code: Optional[str] = Field(None, min_length=1, max_length=100)
-    total_price: Optional[str] = Field(None, min_length=1)
+    total_price: Optional[str] = Field(None, min_length=1, description="Total price in DZD (Algerian Dinar)")
 
     model_config = ConfigDict(
         json_schema_extra={
             "example": {
                 "receipt_code": "REC-2024-001-UPDATED",
-                "total_price": "80000.00",
+                "total_price": "80000.00",  # in DZD
             }
         }
     )

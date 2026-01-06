@@ -7,6 +7,8 @@ export const appointmentAPI = {
   getHistory: () => api.get('/appointment/history'),
   create: (data) => api.post('/appointment/', data),
   cancel: (id) => api.put(`/appointment/${id}/cancel`, {}),
+  accept: (id) => api.put(`/appointment/${id}/accept`),
+  refuse: (id) => api.put(`/appointment/${id}/refuse`),
   confirmAttendance: (id) => api.put(`/appointment/${id}/confirm-attendance`),
 }
 

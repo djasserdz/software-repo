@@ -72,7 +72,7 @@
             </div>
             <div>
               <p class="text-sm text-gray-500">Quantity</p>
-              <p class="font-medium text-gray-900">{{ appointment.requested_quantity }} tons</p>
+              <p class="font-medium text-gray-900">{{ formatNumber(appointment.requested_quantity * 1000) }} kg</p>
             </div>
             <div>
               <p class="text-sm text-gray-500">Zone ID</p>
@@ -178,6 +178,14 @@ const getStatusClass = (status) => {
 const getGrainName = (grainId) => {
   const grain = grains.value.find((g) => g.grain_id === grainId)
   return grain ? grain.name : 'Unknown'
+}
+
+const formatNumber = (num) => {
+  if (!num) return '0'
+  return new Intl.NumberFormat('ar-DZ', {
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 0
+  }).format(num)
 }
 
 const cancelAppointment = async (appointmentId) => {

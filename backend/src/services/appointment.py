@@ -106,7 +106,35 @@ class AppointementService:
         zone_id: Optional[int] = None,
         farmer_id: Optional[int] = None,
         status: Optional[AppointmentStatus] = None,
+        current_user=None,
     ):
+        from src.models.user import UserRole
+        
+        # If warehouse admin, only return appointments for their warehouse zones
+        if current_user and current_user.role == UserRole.WAREHOUSE_ADMIN:
+            from src.repositories.warehouse import WarehouseRepo
+            from src.repositories.storagezone import StorageZoneRepo
+            
+            # Get all zones for this warehouse admin
+            warehouses = await WarehouseRepo.get_all(
+                session, manager_id=current_user.user_id
+            )
+            if not warehouses:
+                return []
+            
+            warehouse_id = warehouses[0].warehouse_id
+            zones = await StorageZoneRepo.get_all(session, warehouse_id=warehouse_id)
+            zone_ids = [z.zone_id for z in zones]
+            
+            # Get appointments for these zones
+            appointments = []
+            for z_id in zone_ids:
+                zones_apps = await AppointmentRepo.get_all(
+                    session, zone_id=z_id, farmer_id=farmer_id, status=status
+                )
+                appointments.extend(zones_apps)
+            return appointments
+        
         appointments = await AppointmentRepo.get_all(
             session, zone_id=zone_id, farmer_id=farmer_id, status=status
         )
@@ -223,8 +251,23 @@ class AppointementService:
             )
 
     @staticmethod
-    async def get_appointment(session: AsyncSession, id: int):
+    async def get_appointment(session: AsyncSession, id: int, current_user=None):
+        from src.models.user import UserRole
+        from src.repositories.warehouse import WarehouseRepo
+        
         appointment = await AppointmentRepo.get_by_id(session, id)
+        
+        # Check warehouse admin access
+        if current_user and current_user.role == UserRole.WAREHOUSE_ADMIN:
+            zone = await StorageZoneRepo.get_by_id(session, appointment.zone_id)
+            warehouse = await WarehouseRepo.get_by_id(session, zone.warehouse_id)
+            
+            if warehouse.manager_id != current_user.user_id:
+                raise HTTPException(
+                    status_code=403,
+                    detail="You can only view appointments in your own warehouse"
+                )
+        
         return appointment
 
     @staticmethod

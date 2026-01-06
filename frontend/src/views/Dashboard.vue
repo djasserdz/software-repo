@@ -129,12 +129,20 @@
           </div>
         </div>
       </div>
+
+      <!-- Warehouse Map Section (for farmers) -->
+      <div v-if="isFarmer" class="mt-6">
+        <div class="card">
+          <h2 class="text-xl font-semibold text-gray-900 mb-4">Warehouse Locations</h2>
+          <div id="dashboard-map" class="w-full h-96 rounded-lg border border-gray-200"></div>
+        </div>
+      </div>
     </div>
   </Layout>
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, nextTick, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '../stores/auth'
 import { appointmentAPI } from '../api/appointment'
@@ -148,14 +156,9 @@ const authStore = useAuthStore()
 const user = computed(() => authStore.user)
 const isFarmer = computed(() => authStore.isFarmer)
 
-// Redirect based on role
-onMounted(() => {
-  if (authStore.isAdmin) {
-    router.replace('/admin')
-  } else if (authStore.isWarehouseAdmin) {
-    router.replace('/warehouse-admin')
-  }
-})
+let map = null
+let mapMarkers = []
+const allWarehouses = ref([])
 
 const stats = ref({
   warehouses: 0,
@@ -167,7 +170,16 @@ const stats = ref({
 const recentAppointments = ref([])
 const loading = ref(true)
 
+// Redirect based on role and load data
 onMounted(async () => {
+  if (authStore.isAdmin) {
+    router.replace('/admin')
+    return
+  } else if (authStore.isWarehouseAdmin) {
+    router.replace('/warehouse-admin')
+    return
+  }
+  
   try {
     const [warehouses, appointments, deliveries, grains] = await Promise.all([
       warehouseAPI.getAll(),
@@ -184,6 +196,13 @@ onMounted(async () => {
     }
 
     recentAppointments.value = (appointments.data?.appointments || []).slice(0, 5)
+    
+    // Store warehouses for map display (for farmers)
+    if (isFarmer.value) {
+      allWarehouses.value = warehouses.data || []
+      await nextTick()
+      initMap()
+    }
   } catch (error) {
     console.error('Error loading dashboard data:', error)
   } finally {
@@ -209,5 +228,106 @@ const getStatusClass = (status) => {
   }
   return classes[status] || 'bg-gray-100 text-gray-800'
 }
+
+const initMap = async () => {
+  await nextTick()
+  if (typeof window === 'undefined' || !isFarmer.value) return
+  
+  // Wait for Leaflet to be available
+  let L = window.L
+  if (!L) {
+    // Retry after a short delay
+    setTimeout(() => {
+      L = window.L
+      if (L) createMap(L)
+    }, 100)
+    return
+  }
+  
+  createMap(L)
+}
+
+const createMap = (L) => {
+  const mapElement = document.getElementById('dashboard-map')
+  if (!mapElement || map) return
+
+  // Calculate center based on warehouses or use default
+  let center = [31.0, 36.0] // Default center
+  
+  if (allWarehouses.value.length > 0) {
+    const validWarehouses = allWarehouses.value.filter(w => w.y_float != null && w.x_float != null)
+    if (validWarehouses.length > 0) {
+      const avgLat = validWarehouses.reduce((sum, w) => sum + w.y_float, 0) / validWarehouses.length
+      const avgLng = validWarehouses.reduce((sum, w) => sum + w.x_float, 0) / validWarehouses.length
+      center = [avgLat, avgLng]
+    }
+  }
+
+  map = L.map('dashboard-map').setView(center, 10)
+
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    attribution: '© OpenStreetMap contributors',
+    maxZoom: 19,
+  }).addTo(map)
+
+  updateMap()
+}
+
+const updateMap = () => {
+  if (!map || !isFarmer.value) {
+    if (window.L && isFarmer.value) {
+      initMap()
+    }
+    return
+  }
+  
+  const L = window.L
+  if (!L) return
+
+  // Remove existing markers
+  mapMarkers.forEach((marker) => map.removeLayer(marker))
+  mapMarkers = []
+
+  // Add markers for each warehouse
+  const validWarehouses = allWarehouses.value.filter(w => w.y_float != null && w.x_float != null)
+  
+  validWarehouses.forEach((warehouse) => {
+    const popupContent = `
+      <div class="p-2">
+        <h3 class="font-semibold text-gray-900 mb-1">${warehouse.name}</h3>
+        <p class="text-sm text-gray-600 mb-2">${warehouse.location}</p>
+        <button 
+          onclick="window.location.href='/warehouses/${warehouse.warehouse_id}'"
+          class="mt-2 px-3 py-1 bg-primary-600 text-white text-xs rounded hover:bg-primary-700"
+        >
+          View Details
+        </button>
+      </div>
+    `
+    
+    const marker = L.marker([warehouse.y_float, warehouse.x_float])
+      .addTo(map)
+      .bindPopup(popupContent)
+
+    mapMarkers.push(marker)
+  })
+
+  // Fit map bounds to show all warehouses
+  if (validWarehouses.length > 0) {
+    const bounds = L.latLngBounds(
+      validWarehouses.map((w) => [w.y_float, w.x_float])
+    )
+    map.fitBounds(bounds, { padding: [50, 50] })
+  }
+}
+
+// Cleanup map on component unmount
+onUnmounted(() => {
+  if (map) {
+    map.remove()
+    map = null
+    mapMarkers = []
+  }
+})
 </script>
 

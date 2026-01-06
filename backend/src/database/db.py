@@ -26,6 +26,7 @@ class AppointmentStatus(str, Enum):
     ACCEPTED = "accepted"
     CANCELLED = "cancelled"
     REFUSED = "refused"
+    COMPLETED = "completed"
 
 
 class TimeSlotStatus(str, Enum):

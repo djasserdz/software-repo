@@ -9,10 +9,12 @@ from src.routes.warehouse import router as warehouse_router
 from src.routes.grain import router as grain_router
 from src.routes.storagezone import router as storagezone_router
 from src.routes.timeslot import router as time_router
+from src.routes.timeslottemplate import router as timeslottemplate_router
 from src.routes.appointment import router as appointment_router
 from src.routes.delivery import router as delivery_router
 from src.routes.location import router as location_router
 from src.routes.geolocation import router as geolocation_router
+from src.routes.admin import router as admin_router
 from src.services.scheduler import setup_scheduler, shutdown_scheduler
 
 import os
@@ -25,7 +27,7 @@ LOG_FILE = os.path.join(BASE_DIR, "app.log")
 
 file_handler = RotatingFileHandler(
     LOG_FILE,
-    maxBytes=5 * 1024 * 1024,  # 5MB
+    maxBytes=5 * 1024 * 1024,  
     backupCount=5,
 )
 
@@ -134,6 +136,8 @@ app.include_router(storagezone_router, prefix="/warehouse-zones", tags=["warehou
 app.include_router(time_router, prefix="/time", tags=["time"])
 # Also add time-slots route for frontend compatibility
 app.include_router(time_router, prefix="/time-slots", tags=["time-slots"])
+app.include_router(timeslottemplate_router, prefix="/time-template", tags=["time-template"])
+app.include_router(timeslottemplate_router, prefix="/timeslot-template", tags=["timeslot-template"])
 app.include_router(appointment_router, prefix="/appointment", tags=["appointment"])
 # Also add appointments route for frontend compatibility
 app.include_router(appointment_router, prefix="/appointments", tags=["appointments"])
@@ -142,3 +146,4 @@ app.include_router(delivery_router, prefix="/delivery", tags=["delivery"])
 app.include_router(delivery_router, prefix="/deliveries", tags=["deliveries"])
 app.include_router(location_router, prefix="/location", tags=["location"])
 app.include_router(geolocation_router, prefix="/geolocation", tags=["geolocation"])
+app.include_router(admin_router, prefix="/admin", tags=["admin"])

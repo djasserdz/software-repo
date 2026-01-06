@@ -31,7 +31,7 @@
               </p>
             </div>
             <div class="text-right">
-              <p class="text-2xl font-bold text-primary-600">${{ delivery.total_price }}</p>
+              <p class="text-2xl font-bold text-primary-600">{{ formatPrice(delivery.total_price) }} DZD</p>
               <p class="text-xs text-gray-500 mt-1">
                 {{ formatDate(delivery.created_at) }}
               </p>
@@ -90,6 +90,14 @@ const formatDate = (dateString) => {
     hour: '2-digit',
     minute: '2-digit',
   })
+}
+
+const formatPrice = (price) => {
+  if (!price) return '0'
+  return new Intl.NumberFormat('ar-DZ', {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2
+  }).format(price)
 }
 </script>
 

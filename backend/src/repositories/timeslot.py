@@ -1,9 +1,10 @@
-from typing import Optional, List
+from typing import Optional, List, Union
 from datetime import datetime
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, update, delete, func
 from sqlalchemy.exc import IntegrityError
 from fastapi import status
+import logging
 
 from src.database.db import TimeSlot, TimeSlotStatus
 from src.models.timeslot import TimeSlotCreate
@@ -52,20 +53,47 @@ class TimeSlotRepo:
         message = "Failed to check time slot existence"
 
     @staticmethod
-    async def create(session: AsyncSession, timeslot_data) -> TimeSlot:
+    async def create(session: AsyncSession, timeslot_data: Union[TimeSlotCreate, dict]) -> TimeSlot:
         """Create a new time slot. Accepts either TimeSlotCreate model or dict"""
         try:
             # Handle both Pydantic model and dict inputs
-            if hasattr(timeslot_data, "model_dump"):
-                timeslot_dict = timeslot_data.model_dump()
+            if isinstance(timeslot_data, dict):
+                timeslot_dict = timeslot_data.copy()
             else:
-                timeslot_dict = timeslot_data
+                timeslot_dict = timeslot_data.model_dump()
+            
+            # Convert status string to enum if needed
+            if 'status' in timeslot_dict and isinstance(timeslot_dict['status'], str):
+                try:
+                    timeslot_dict['status'] = TimeSlotStatus(timeslot_dict['status'])
+                except ValueError:
+                    # If invalid status, default to ACTIVE
+                    timeslot_dict['status'] = TimeSlotStatus.ACTIVE
+            
+            # Ensure datetime fields are datetime objects, not strings
+            if 'start_at' in timeslot_dict and isinstance(timeslot_dict['start_at'], str):
+                timeslot_dict['start_at'] = datetime.fromisoformat(timeslot_dict['start_at'].replace('Z', '+00:00'))
+            if 'end_at' in timeslot_dict and isinstance(timeslot_dict['end_at'], str):
+                timeslot_dict['end_at'] = datetime.fromisoformat(timeslot_dict['end_at'].replace('Z', '+00:00'))
+
+            # Validate that end_at is after start_at
+            if timeslot_dict.get('end_at') <= timeslot_dict.get('start_at'):
+                raise TimeSlotRepo.InvalidTimeRange()
+
+            # Log the data being created
+            logging.info(f"📝 Creating TimeSlot: zone_id={timeslot_dict.get('zone_id')}, "
+                         f"start_at={timeslot_dict.get('start_at')}, end_at={timeslot_dict.get('end_at')}")
 
             orm_timeslot = TimeSlot(**timeslot_dict)
             session.add(orm_timeslot)
+            await session.flush()  # Flush to get the ID
             await session.commit()
             await session.refresh(orm_timeslot)
+            logging.info(f"✅ TimeSlot created successfully: ID={orm_timeslot.time_id}, zone={orm_timeslot.zone_id}, start={orm_timeslot.start_at}")
             return orm_timeslot
+        except TimeSlotRepo.InvalidTimeRange:
+            await session.rollback()
+            raise
         except IntegrityError:
             await session.rollback()
             raise TimeSlotRepo.CreateError()
@@ -207,14 +235,19 @@ class TimeSlotRepo:
     async def get_by_zone_and_start(
         session: AsyncSession, zone_id: int, start_at: datetime
     ) -> Optional[TimeSlot]:
-        """Get time slot by zone ID and start time"""
+        """Get time slot by zone ID and start time (exact match)"""
         try:
+            # Use exact datetime match for duplicate detection
             stmt = select(TimeSlot).where(
                 TimeSlot.zone_id == zone_id,
                 TimeSlot.start_at == start_at,
                 TimeSlot.deleted_at.is_(None),
             )
             result = await session.execute(stmt)
-            return result.scalar_one_or_none()
-        except Exception:
+            slot = result.scalar_one_or_none()
+            if slot:
+                logging.debug(f"Found existing slot: ID={slot.time_id}, zone={zone_id}, start={start_at}")
+            return slot
+        except Exception as e:
+            logging.error(f"Error checking for existing slot: {e}")
             raise TimeSlotRepo.GetError()

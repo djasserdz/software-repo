@@ -1,4 +1,4 @@
-from typing import Optional, List
+from typing import Optional, List, Union
 from datetime import datetime
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, update, delete, func
@@ -57,10 +57,14 @@ class StorageZoneRepo:
 
     @staticmethod
     async def create(
-        session: AsyncSession, zone_data: StorageZoneCreate
+        session: AsyncSession, zone_data: Union[StorageZoneCreate, dict]
     ) -> StorageZone:
         try:
-            zone_dict = zone_data.model_dump()
+            # Handle both dict and Pydantic model
+            if isinstance(zone_data, dict):
+                zone_dict = zone_data
+            else:
+                zone_dict = zone_data.model_dump()
             orm_zone = StorageZone(**zone_dict)
             session.add(orm_zone)
             await session.commit()
